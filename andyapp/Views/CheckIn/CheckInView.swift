@@ -24,7 +24,7 @@ struct CheckInView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                Color(hex: "#FAF7FD").ignoresSafeArea()
+                Color(hex: "#160D27").ignoresSafeArea()
 
                 if isSaved {
                     savedConfirmation
@@ -75,7 +75,7 @@ struct CheckInView: View {
         HStack(spacing: 8) {
             ForEach(0..<totalSteps, id: \.self) { i in
                 Capsule()
-                    .fill(i <= currentStep ? Color(hex: "#8B6CAF") : Color(hex: "#D5C8E4"))
+                    .fill(i <= currentStep ? Color(hex: "#8B6CAF") : Color.white.opacity(0.20))
                     .frame(width: i == currentStep ? 28 : 8, height: 8)
                     .animation(.spring(response: 0.3), value: currentStep)
             }
@@ -104,8 +104,8 @@ struct CheckInView: View {
                     Image(systemName: "chevron.left")
                         .font(.subheadline.weight(.semibold))
                         .frame(width: 52, height: 54)
-                        .background(Color(hex: "#F0EAF5"), in: RoundedRectangle(cornerRadius: 14))
-                        .foregroundStyle(Color(hex: "#8B6CAF"))
+                        .background(Color(hex: "#2B1B50"), in: RoundedRectangle(cornerRadius: 14))
+                        .foregroundStyle(Color(hex: "#C4A0E8"))
                 }
                 .buttonStyle(.plain)
             }
@@ -204,7 +204,7 @@ private struct IntensityStepView: View {
                 Circle()
                     .trim(from: 0.0, to: 0.75)
                     .stroke(
-                        Color(hex: "#F0EAF5"),
+                        Color.white.opacity(0.12),
                         style: StrokeStyle(lineWidth: 14, lineCap: .round)
                     )
                     .rotationEffect(.degrees(135))
@@ -238,7 +238,7 @@ private struct IntensityStepView: View {
                         level = lv
                     } label: {
                         Circle()
-                            .fill(level >= lv ? arcColor : Color(hex: "#F0EAF5"))
+                            .fill(level >= lv ? arcColor : Color(hex: "#2B1B50"))
                             .frame(width: 26, height: 26)
                             .overlay(
                                 Text("\(lv)")
@@ -294,13 +294,13 @@ private struct EmotionsStepView: View {
             .padding(.vertical, 12)
             .background(
                 RoundedRectangle(cornerRadius: 14)
-                    .fill(on ? Color(hex: "#8B6CAF").opacity(0.12) : Color(hex: "#F7F3FA"))
+                    .fill(on ? Color(hex: "#8B6CAF").opacity(0.40) : Color(hex: "#2B1B50"))
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 14)
-                    .stroke(on ? Color(hex: "#8B6CAF").opacity(0.6) : .clear, lineWidth: 1.5)
+                    .stroke(on ? Color(hex: "#C4A0E8").opacity(0.8) : .clear, lineWidth: 1.5)
             )
-            .foregroundStyle(on ? Color(hex: "#8B6CAF") : .primary)
+            .foregroundStyle(on ? Color(hex: "#C4A0E8") : .primary)
         }
         .buttonStyle(.plain)
         .animation(.spring(response: 0.2), value: on)
@@ -363,7 +363,7 @@ private struct JournalStepView: View {
                         .scrollContentBackground(.hidden)
                 }
                 .padding(16)
-                .background(Color(hex: "#F7F3FA"), in: RoundedRectangle(cornerRadius: 16))
+                .background(Color(hex: "#231441"), in: RoundedRectangle(cornerRadius: 16))
                 .onAppear { placeholderIdx = Int.random(in: 0..<placeholders.count) }
 
                 // Optional depth prompts
@@ -389,7 +389,7 @@ private struct JournalStepView: View {
                             .font(.callout)
                             .textFieldStyle(.plain)
                             .padding(10)
-                            .background(Color(hex: "#F0EAF5"), in: RoundedRectangle(cornerRadius: 10))
+                            .background(Color(hex: "#2B1B50"), in: RoundedRectangle(cornerRadius: 10))
                         }
                     }
                 }

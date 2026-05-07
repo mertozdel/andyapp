@@ -24,7 +24,7 @@ struct EntryDetailView: View {
             }
             .padding(20)
         }
-        .background(Color(hex: "#FAF7FD").ignoresSafeArea())
+        .background(Color(hex: "#160D27").ignoresSafeArea())
         .navigationTitle(entry.displayTitle)
         .navigationBarTitleDisplayMode(.inline)
     }
@@ -60,8 +60,8 @@ struct EntryDetailView: View {
             }
         }
         .padding(18)
-        .background(.white.opacity(0.85), in: RoundedRectangle(cornerRadius: 20))
-        .shadow(color: .black.opacity(0.04), radius: 6, y: 2)
+        .background(Color(hex: "#231441"), in: RoundedRectangle(cornerRadius: 20))
+        .shadow(color: .black.opacity(0.35), radius: 6, y: 2)
     }
 
     private var intensityArc: some View {
@@ -69,7 +69,7 @@ struct EntryDetailView: View {
         return ZStack {
             Circle()
                 .trim(from: 0, to: 0.75)
-                .stroke(Color(hex: "#F0EAF5"),
+                .stroke(Color.white.opacity(0.12),
                         style: StrokeStyle(lineWidth: 8, lineCap: .round))
                 .rotationEffect(.degrees(135))
             Circle()
@@ -116,8 +116,8 @@ struct EntryDetailView: View {
             }
         }
         .padding(18)
-        .background(.white.opacity(0.85), in: RoundedRectangle(cornerRadius: 20))
-        .shadow(color: .black.opacity(0.04), radius: 6, y: 2)
+        .background(Color(hex: "#231441"), in: RoundedRectangle(cornerRadius: 20))
+        .shadow(color: .black.opacity(0.35), radius: 6, y: 2)
     }
 
     // MARK: Journal
@@ -131,8 +131,8 @@ struct EntryDetailView: View {
                 .fixedSize(horizontal: false, vertical: true)
         }
         .padding(18)
-        .background(.white.opacity(0.85), in: RoundedRectangle(cornerRadius: 20))
-        .shadow(color: .black.opacity(0.04), radius: 6, y: 2)
+        .background(Color(hex: "#231441"), in: RoundedRectangle(cornerRadius: 20))
+        .shadow(color: .black.opacity(0.35), radius: 6, y: 2)
     }
 
     // MARK: Prompt answers
@@ -157,8 +157,8 @@ struct EntryDetailView: View {
             }
         }
         .padding(18)
-        .background(.white.opacity(0.85), in: RoundedRectangle(cornerRadius: 20))
-        .shadow(color: .black.opacity(0.04), radius: 6, y: 2)
+        .background(Color(hex: "#231441"), in: RoundedRectangle(cornerRadius: 20))
+        .shadow(color: .black.opacity(0.35), radius: 6, y: 2)
     }
 
     // MARK: Helpers

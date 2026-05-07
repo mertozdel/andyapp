@@ -19,7 +19,7 @@ struct DiaryTimelineView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                Color(hex: "#FAF7FD").ignoresSafeArea()
+                Color(hex: "#160D27").ignoresSafeArea()
 
                 if entries.isEmpty {
                     emptyState
@@ -32,14 +32,14 @@ struct DiaryTimelineView: View {
                 ToolbarItem(placement: .topBarLeading) {
                     Button { showSettings = true } label: {
                         Image(systemName: "gearshape")
-                            .foregroundStyle(Color(hex: "#8B6CAF"))
+                            .foregroundStyle(Color(hex: "#C4A0E8"))
                     }
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button { showCheckIn = true } label: {
                         Image(systemName: "plus.circle.fill")
                             .font(.title2)
-                            .foregroundStyle(Color(hex: "#8B6CAF"))
+                            .foregroundStyle(Color(hex: "#C4A0E8"))
                     }
                 }
             }
@@ -88,10 +88,10 @@ struct DiaryTimelineView: View {
         VStack(spacing: 16) {
             Image(systemName: "heart.text.square")
                 .font(.system(size: 60))
-                .foregroundStyle(Color(hex: "#D5C8E4"))
+                .foregroundStyle(Color(hex: "#7B5AB0"))
             Text("Your journal is waiting")
                 .font(.title3.weight(.semibold))
-                .foregroundStyle(Color(hex: "#8B6CAF"))
+                .foregroundStyle(Color(hex: "#C4A0E8"))
             Text("Tap + to check in with yourself")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)

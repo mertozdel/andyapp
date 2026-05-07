@@ -16,15 +16,15 @@ struct EmotionPill: View {
         .padding(.vertical, isSmall ? 3 : 6)
         .background(
             Capsule().fill(
-                isSelected ? Color(hex: "#8B6CAF").opacity(0.15) : Color(hex: "#F0EAF5")
+                isSelected ? Color(hex: "#8B6CAF").opacity(0.40) : Color(hex: "#2B1B50")
             )
         )
         .overlay(
             Capsule().stroke(
-                isSelected ? Color(hex: "#8B6CAF").opacity(0.5) : .clear,
+                isSelected ? Color(hex: "#C4A0E8").opacity(0.80) : .clear,
                 lineWidth: 1
             )
         )
-        .foregroundStyle(isSelected ? Color(hex: "#8B6CAF") : .primary)
+        .foregroundStyle(isSelected ? Color(hex: "#C4A0E8") : .primary)
     }
 }

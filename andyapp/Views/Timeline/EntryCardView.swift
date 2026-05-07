@@ -67,7 +67,7 @@ struct EntryCardView: View {
             }
         }
         .padding(16)
-        .background(.white.opacity(0.85), in: RoundedRectangle(cornerRadius: 20))
-        .shadow(color: .black.opacity(0.04), radius: 8, y: 2)
+        .background(Color(hex: "#231441"), in: RoundedRectangle(cornerRadius: 20))
+        .shadow(color: .black.opacity(0.35), radius: 8, y: 2)
     }
 }

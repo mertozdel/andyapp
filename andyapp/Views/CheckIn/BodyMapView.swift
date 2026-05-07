@@ -5,8 +5,8 @@ import SwiftUI
 // Source grid: 500 × 920. Normalised via svgX/500, svgY/920.
 
 private enum MapTokens {
-    static let silhouetteFill        = Color(hex: "#D5C8E4").opacity(0.22)
-    static let silhouetteStroke      = Color(hex: "#A78BBA").opacity(0.50)
+    static let silhouetteFill        = Color(hex: "#7B5AB0").opacity(0.30)
+    static let silhouetteStroke      = Color(hex: "#C4A0E8").opacity(0.60)
     static let silhouetteStrokeWidth: CGFloat = 1.3
     static let canvasWidth:  CGFloat = 230
     static let canvasHeight: CGFloat = 423
@@ -88,7 +88,7 @@ struct BodyMapView: View {
                 .buttonStyle(.plain)
             }
         }
-        .background(Capsule().fill(Color(hex: "#F0EAF5")))
+        .background(Capsule().fill(Color(hex: "#2B1B50")))
         .frame(width: 200)
     }
 
@@ -98,7 +98,7 @@ struct BodyMapView: View {
         ZStack {
             if !isCompact {
                 RadialGradient(
-                    colors: [Color(hex: "#D5C8E4").opacity(0.08), .clear],
+                    colors: [Color(hex: "#7B5AB0").opacity(0.12), .clear],
                     center: .center,
                     startRadius: 20,
                     endRadius: canvasSize.width * 0.85
@@ -408,7 +408,7 @@ struct TapRippleView: View {
     @State private var animate = false
     var body: some View {
         Circle()
-            .stroke(Color(hex: "#A78BBA").opacity(0.6), lineWidth: 2)
+            .stroke(Color(hex: "#C4A0E8").opacity(0.7), lineWidth: 2)
             .frame(width: 28, height: 28)
             .scaleEffect(animate ? 2.0 : 0.5)
             .opacity(animate ? 0 : 1)
@@ -471,7 +471,7 @@ struct SensationPickerSheet: View {
                                         Circle()
                                             .fill(intensity >= lv
                                                   ? (selectedType?.dotColor ?? .gray)
-                                                  : Color(hex: "#F0EAF5"))
+                                                  : Color(hex: "#2B1B50"))
                                             .frame(width: 36, height: 36)
                                             .overlay(
                                                 Text("\(lv)")
@@ -495,7 +495,7 @@ struct SensationPickerSheet: View {
                                 .lineLimit(2...4)
                                 .textFieldStyle(.plain)
                                 .padding(12)
-                                .background(Color(hex: "#F7F3FA"), in: RoundedRectangle(cornerRadius: 12))
+                                .background(Color(hex: "#231441"), in: RoundedRectangle(cornerRadius: 12))
                         }
                         .transition(.move(edge: .bottom).combined(with: .opacity))
                     }
@@ -538,7 +538,7 @@ struct SensationPickerSheet: View {
             .padding(.vertical, 10)
             .background(
                 RoundedRectangle(cornerRadius: 12)
-                    .fill(on ? type.dotColor.opacity(0.18) : Color(hex: "#F7F3FA"))
+                    .fill(on ? type.dotColor.opacity(0.30) : Color(hex: "#2B1B50"))
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 12)
