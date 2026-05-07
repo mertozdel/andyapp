@@ -243,7 +243,7 @@ private struct IntensityStepView: View {
                             .overlay(
                                 Text("\(lv)")
                                     .font(.system(size: 10, weight: .semibold))
-                                    .foregroundStyle(level >= lv ? .white : Color(hex: "#C0B4D0"))
+                                    .foregroundStyle(level >= lv ? .white : Color(hex: "#6D5F80"))
                             )
                             .scaleEffect(level == lv ? 1.22 : 1.0)
                             .animation(.spring(response: 0.2), value: level)
@@ -352,7 +352,7 @@ private struct JournalStepView: View {
                     if journalText.isEmpty {
                         Text(placeholders[placeholderIdx])
                             .font(.body)
-                            .foregroundStyle(Color(hex: "#C0B4D0"))
+                            .foregroundStyle(Color(hex: "#6D5F80"))
                             .padding(.top, 8)
                             .padding(.leading, 5)
                     }

@@ -78,7 +78,7 @@ struct BodyMapView: View {
                 } label: {
                     Text(side.displayName)
                         .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(activeSide == side ? .white : .secondary)
+                        .foregroundStyle(activeSide == side ? .white : Color(hex: "#6D5F80"))
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 10)
                         .background {
@@ -476,7 +476,7 @@ struct SensationPickerSheet: View {
                                             .overlay(
                                                 Text("\(lv)")
                                                     .font(.caption2.weight(.bold))
-                                                    .foregroundStyle(intensity >= lv ? .white : .secondary)
+                                                    .foregroundStyle(intensity >= lv ? .white : Color(hex: "#6D5F80"))
                                             )
                                     }
                                     .buttonStyle(.plain)
