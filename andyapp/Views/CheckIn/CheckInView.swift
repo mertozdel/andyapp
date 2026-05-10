@@ -284,71 +284,72 @@ private struct IntensityStepView: View {
     }
 
     var body: some View {
-        ScrollView(showsIndicators: false) {
-            VStack(spacing: 28) {
-                ZStack {
-                    Circle()
-                        .trim(from: 0.0, to: 0.75)
-                        .stroke(
-                            Color.white.opacity(0.12),
-                            style: StrokeStyle(lineWidth: 14, lineCap: .round)
-                        )
-                        .rotationEffect(.degrees(135))
+        VStack(spacing: 0) {
+            Spacer()
 
-                    Circle()
-                        .trim(from: 0.0, to: fraction * 0.75)
-                        .stroke(
-                            arcColor,
-                            style: StrokeStyle(lineWidth: 14, lineCap: .round)
-                        )
-                        .rotationEffect(.degrees(135))
-                        .animation(.spring(response: 0.3, dampingFraction: 0.8), value: level)
+            ZStack {
+                Circle()
+                    .trim(from: 0.0, to: 0.75)
+                    .stroke(
+                        Color.white.opacity(0.12),
+                        style: StrokeStyle(lineWidth: 14, lineCap: .round)
+                    )
+                    .rotationEffect(.degrees(135))
 
-                    VStack(spacing: 2) {
-                        Text("\(level)")
-                            .font(.system(size: 64, weight: .bold, design: .rounded))
-                            .foregroundStyle(arcColor)
-                            .contentTransition(.numericText())
-                            .animation(.spring(response: 0.25), value: level)
-                        Text(label)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
+                Circle()
+                    .trim(from: 0.0, to: fraction * 0.75)
+                    .stroke(
+                        arcColor,
+                        style: StrokeStyle(lineWidth: 14, lineCap: .round)
+                    )
+                    .rotationEffect(.degrees(135))
+                    .animation(.spring(response: 0.3, dampingFraction: 0.8), value: level)
+
+                VStack(spacing: 2) {
+                    Text("\(level)")
+                        .font(.system(size: 64, weight: .bold, design: .rounded))
+                        .foregroundStyle(arcColor)
+                        .contentTransition(.numericText())
+                        .animation(.spring(response: 0.25), value: level)
+                    Text(label)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                 }
-                .frame(width: 180, height: 180)
-                .contentShape(Circle())
-                .gesture(
-                    DragGesture(minimumDistance: 0)
-                        .onChanged { value in
-                            let center = CGPoint(x: 90, y: 90)
-                            let dx = value.location.x - center.x
-                            let dy = value.location.y - center.y
-                            var angle = atan2(dy, dx) * 180 / .pi
-                            if angle < 0 { angle += 360 }
-                            var relative = angle - 135
-                            if relative < 0 { relative += 360 }
-                            guard relative <= 270 else { return }
-                            let newLevel = max(1, min(10, Int((relative / 270 * 9).rounded(.toNearestOrAwayFromZero)) + 1))
-                            if newLevel != level {
-                                level = newLevel
-                                UIImpactFeedbackGenerator(style: .light).impactOccurred()
-                            }
-                        }
-                )
-
-                // 1–10 button grid
-                LazyVGrid(
-                    columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 5),
-                    spacing: 8
-                ) {
-                    ForEach(1...10, id: \.self) { n in
-                        intensityButton(n)
-                    }
-                }
-
-                Spacer(minLength: 12)
             }
-            .padding(.bottom, 8)
+            .frame(width: 200, height: 200)
+            .contentShape(Circle())
+            .gesture(
+                DragGesture(minimumDistance: 0)
+                    .onChanged { value in
+                        let center = CGPoint(x: 100, y: 100)
+                        let dx = value.location.x - center.x
+                        let dy = value.location.y - center.y
+                        var angle = atan2(dy, dx) * 180 / .pi
+                        if angle < 0 { angle += 360 }
+                        var relative = angle - 135
+                        if relative < 0 { relative += 360 }
+                        guard relative <= 270 else { return }
+                        let newLevel = max(1, min(10, Int((relative / 270 * 9).rounded(.toNearestOrAwayFromZero)) + 1))
+                        if newLevel != level {
+                            level = newLevel
+                            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                        }
+                    }
+            )
+
+            Spacer().frame(height: 36)
+
+            // 1–10 button grid
+            LazyVGrid(
+                columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 5),
+                spacing: 8
+            ) {
+                ForEach(1...10, id: \.self) { n in
+                    intensityButton(n)
+                }
+            }
+
+            Spacer()
         }
     }
 
