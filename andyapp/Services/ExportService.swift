@@ -401,28 +401,23 @@ struct ExportView: View {
 
     private func exportData() {
         isGenerating = true
-        let toExport = filteredEntries
-        Task.detached(priority: .userInitiated) {
-            var url: URL?
-            switch selectedFormat {
-            case .csv:
-                let str = ExportService.generateCSV(entries: toExport)
-                if let data = str.data(using: .utf8) {
-                    url = ExportService.writeToTemp(data, format: .csv)
-                }
-            case .json:
-                if let data = ExportService.generateJSON(entries: toExport) {
-                    url = ExportService.writeToTemp(data, format: .json)
-                }
-            case .pdf:
-                let data = ExportService.generatePDF(entries: toExport)
-                url = ExportService.writeToTemp(data, format: .pdf)
+        var url: URL?
+        switch selectedFormat {
+        case .csv:
+            let str = ExportService.generateCSV(entries: filteredEntries)
+            if let data = str.data(using: .utf8) {
+                url = ExportService.writeToTemp(data, format: .csv)
             }
-            await MainActor.run {
-                if let url { shareItem = IdentifiableURL(url: url) }
-                isGenerating = false
+        case .json:
+            if let data = ExportService.generateJSON(entries: filteredEntries) {
+                url = ExportService.writeToTemp(data, format: .json)
             }
+        case .pdf:
+            let data = ExportService.generatePDF(entries: filteredEntries)
+            url = ExportService.writeToTemp(data, format: .pdf)
         }
+        if let url { shareItem = IdentifiableURL(url: url) }
+        isGenerating = false
     }
 }
 
