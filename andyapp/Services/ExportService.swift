@@ -78,6 +78,7 @@ private struct ExportableEntry: Codable {
     let sleepHadDreams: Bool?
     let sleepNotes: String?
     let libidoLevel: Int?
+    let libidoContextTags: [String]?
     let libidoNotes: String?
 }
 
@@ -123,6 +124,7 @@ enum ExportService {
             sleepHadDreams: entry.hasSleepData ? entry.sleepHadDreams : nil,
             sleepNotes: entry.sleepNotes,
             libidoLevel: entry.libidoLevel,
+            libidoContextTags: entry.libidoContextTags,
             libidoNotes: entry.libidoNotes
         )
     }
@@ -139,7 +141,7 @@ enum ExportService {
             "\"\(s.replacingOccurrences(of: "\"", with: "\"\""))\""
         }
 
-        var rows = ["ID,Date,Time,EmotionalLevel,Emotions,JournalText,SleepBedtime,SleepWakeTime,SleepDuration,SleepQuality,SleepWakeups,SleepHadDreams,SleepNotes,LibidoLevel,LibidoNotes,BodySensationCount,TriggerAnswer,NeedAnswer,GratitudeAnswer"]
+        var rows = ["ID,Date,Time,EmotionalLevel,Emotions,JournalText,SleepBedtime,SleepWakeTime,SleepDuration,SleepQuality,SleepWakeups,SleepHadDreams,SleepNotes,LibidoLevel,LibidoContextTags,LibidoNotes,BodySensationCount,TriggerAnswer,NeedAnswer,GratitudeAnswer"]
 
         for entry in entries {
             let answers = entry.promptAnswers
@@ -153,11 +155,12 @@ enum ExportService {
                 entry.sleepBedtime.map { tf.string(from: $0) } ?? "",
                 entry.sleepWakeTime.map { tf.string(from: $0) } ?? "",
                 entry.sleepDurationFormatted ?? "",
-                entry.hasSleepData ? "\(entry.sleepQuality)" : "",
-                entry.hasSleepData ? "\(entry.sleepWakeups)" : "",
-                entry.hasSleepData ? (entry.sleepHadDreams ? "yes" : "no") : "",
+                entry.sleepQuality.map { "\($0)" } ?? "",
+                entry.sleepWakeups.map { "\($0)" } ?? "",
+                entry.sleepHadDreams.map { $0 ? "yes" : "no" } ?? "",
                 esc(entry.sleepNotes ?? ""),
                 entry.libidoLevel.map { "\($0)" } ?? "",
+                esc(entry.libidoContextTags?.joined(separator: "; ") ?? ""),
                 esc(entry.libidoNotes ?? ""),
                 "\(entry.bodySensations.count)",
                 esc(answers["trigger"] ?? ""),
@@ -226,11 +229,17 @@ enum ExportService {
                     draw(entry.journalText, font: bodyFont)
                 }
                 if entry.hasSleepData, let dur = entry.sleepDurationFormatted {
-                    draw("Sleep: \(dur)  Quality: \(entry.sleepQuality)/10  Wakeups: \(entry.sleepWakeups)",
-                         font: metaFont, color: .lightGray)
+                    var sleepLine = "Sleep: \(dur)"
+                    if let q = entry.sleepQuality { sleepLine += "  Quality: \(q)/10" }
+                    if let w = entry.sleepWakeups { sleepLine += "  Wakeups: \(w)" }
+                    draw(sleepLine, font: metaFont, color: .lightGray)
                 }
                 if let lvl = entry.libidoLevel {
-                    draw("Desire level: \(lvl)/10", font: metaFont, color: .lightGray)
+                    var libidoLine = "Desire level: \(lvl)/10"
+                    if let tags = entry.libidoContextTags, !tags.isEmpty {
+                        libidoLine += "  (\(tags.joined(separator: ", ")))"
+                    }
+                    draw(libidoLine, font: metaFont, color: .lightGray)
                 }
                 y += 10
             }

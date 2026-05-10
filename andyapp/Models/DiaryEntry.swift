@@ -23,13 +23,14 @@ final class DiaryEntry {
     // MARK: Sleep Tracking
     var sleepBedtime: Date?
     var sleepWakeTime: Date?
-    var sleepQuality: Int
-    var sleepWakeups: Int
-    var sleepHadDreams: Bool
+    var sleepQuality: Int?
+    var sleepWakeups: Int?
+    var sleepHadDreams: Bool?
     var sleepNotes: String?
 
     // MARK: Libido / Desire Tracking
     var libidoLevel: Int?
+    var libidoContextTags: [String]?
     var libidoNotes: String?
 
     // MARK: DBT AI Coach (strictly opt-in; nil until user requests)
@@ -48,11 +49,12 @@ final class DiaryEntry {
         title: String = "",
         sleepBedtime: Date? = nil,
         sleepWakeTime: Date? = nil,
-        sleepQuality: Int = 5,
-        sleepWakeups: Int = 0,
-        sleepHadDreams: Bool = false,
+        sleepQuality: Int? = nil,
+        sleepWakeups: Int? = nil,
+        sleepHadDreams: Bool? = nil,
         sleepNotes: String? = nil,
         libidoLevel: Int? = nil,
+        libidoContextTags: [String]? = nil,
         libidoNotes: String? = nil
     ) {
         self.id = UUID()
@@ -70,6 +72,7 @@ final class DiaryEntry {
         self.sleepHadDreams = sleepHadDreams
         self.sleepNotes = sleepNotes
         self.libidoLevel = libidoLevel
+        self.libidoContextTags = libidoContextTags
         self.libidoNotes = libidoNotes
     }
 
@@ -146,14 +149,20 @@ final class DiaryEntry {
 
         if hasSleepData, let duration = sleepDurationFormatted {
             lines.append("")
-            lines.append("Sleep: \(duration) · quality \(sleepQuality)/10 · wakeups \(sleepWakeups)")
-            if sleepHadDreams { lines.append("Had dreams: yes") }
+            var sleepLine = "Sleep: \(duration)"
+            if let q = sleepQuality { sleepLine += " · quality \(q)/10" }
+            if let w = sleepWakeups { sleepLine += " · wakeups \(w)" }
+            lines.append(sleepLine)
+            if sleepHadDreams == true { lines.append("Had dreams: yes") }
             if let notes = sleepNotes, !notes.isEmpty { lines.append("Sleep notes: \(notes)") }
         }
 
         if let lvl = libidoLevel {
             lines.append("")
             lines.append("Desire/libido level: \(lvl)/10")
+            if let tags = libidoContextTags, !tags.isEmpty {
+                lines.append("Desire context: \(tags.joined(separator: ", "))")
+            }
             if let notes = libidoNotes, !notes.isEmpty { lines.append("Libido notes: \(notes)") }
         }
 
