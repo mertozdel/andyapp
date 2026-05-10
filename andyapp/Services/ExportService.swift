@@ -80,7 +80,7 @@ enum ExportService {
             }
 
             func drawFooter() {
-                let text = "Page \(pageNumber)  ·  Andy — Personal Diary"
+                let text = "Page \(pageNumber)  ·  Medicus — Personal Diary"
                 let attrs: [NSAttributedString.Key: Any] = [.font: footerFont, .foregroundColor: UIColor.lightGray]
                 let sa = NSAttributedString(string: text, attributes: attrs)
                 let sz = sa.boundingRect(with: CGSize(width: cw, height: 20), options: [], context: nil)
@@ -146,7 +146,7 @@ enum ExportService {
             UIColor.white.withAlphaComponent(0.06).setFill()
             UIBezierPath(rect: CGRect(x: 0, y: headerH - 14, width: pageRect.width, height: 14)).fill()
 
-            NSAttributedString(string: "Andy",
+            NSAttributedString(string: "Medicus",
                 attributes: [.font: appFont, .foregroundColor: UIColor.white]
             ).draw(at: CGPoint(x: margin, y: 13))
 
@@ -296,7 +296,7 @@ enum ExportService {
 
     static func writeToTemp(_ data: Data) -> URL? {
         let url = FileManager.default.temporaryDirectory
-            .appendingPathComponent("andy_diary_\(Int(Date().timeIntervalSince1970)).pdf")
+            .appendingPathComponent("medicus_diary_\(Int(Date().timeIntervalSince1970)).pdf")
         do {
             try data.write(to: url)
             return url
