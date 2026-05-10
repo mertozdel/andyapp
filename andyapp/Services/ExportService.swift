@@ -145,7 +145,7 @@ enum ExportService {
 
         for entry in entries {
             let answers = entry.promptAnswers
-            let row = [
+            let rowPart1: [String] = [
                 entry.id.uuidString,
                 df.string(from: entry.createdAt),
                 tf.string(from: entry.createdAt),
@@ -156,6 +156,8 @@ enum ExportService {
                 entry.sleepWakeTime.map { tf.string(from: $0) } ?? "",
                 entry.sleepDurationFormatted ?? "",
                 entry.sleepQuality.map { "\($0)" } ?? "",
+            ]
+            let rowPart2: [String] = [
                 entry.sleepWakeups.map { "\($0)" } ?? "",
                 entry.sleepHadDreams.map { $0 ? "yes" : "no" } ?? "",
                 esc(entry.sleepNotes ?? ""),
@@ -166,7 +168,8 @@ enum ExportService {
                 esc(answers["trigger"] ?? ""),
                 esc(answers["need"] ?? ""),
                 esc(answers["gratitude"] ?? ""),
-            ].joined(separator: ",")
+            ]
+            let row = (rowPart1 + rowPart2).joined(separator: ",")
             rows.append(row)
         }
         return rows.joined(separator: "\n")

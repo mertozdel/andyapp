@@ -17,7 +17,6 @@ struct CheckInView: View {
     @State private var saveError: String?
 
     // Sleep tracking
-    @State private var sleepEnabled: Bool = false
     @State private var sleepBedtime: Date = Calendar.current.date(bySettingHour: 23, minute: 0, second: 0, of: Date()) ?? Date()
     @State private var sleepWakeTime: Date = Calendar.current.date(bySettingHour: 7, minute: 0, second: 0, of: Date()) ?? Date()
     @State private var sleepQuality: Int = 5
@@ -26,10 +25,11 @@ struct CheckInView: View {
     @State private var sleepNotes: String = ""
 
     // Libido tracking
-    @State private var libidoEnabled: Bool = false
     @State private var libidoLevel: Int = 5
     @State private var libidoContextTags: Set<String> = []
     @State private var libidoNotes: String = ""
+
+    @State private var isSaving = false
 
     private let totalSteps = 6
 
@@ -121,7 +121,6 @@ struct CheckInView: View {
         case 1: EmotionsStepView(selectedEmotions: $selectedEmotions)
         case 2: BodyMapStepView(sensations: $bodySensations)
         case 3: SleepStepView(
-            enabled: $sleepEnabled,
             bedtime: $sleepBedtime,
             wakeTime: $sleepWakeTime,
             quality: $sleepQuality,
@@ -130,7 +129,6 @@ struct CheckInView: View {
             notes: $sleepNotes
         )
         case 4: LibidoStepView(
-            enabled: $libidoEnabled,
             level: $libidoLevel,
             contextTags: $libidoContextTags,
             notes: $libidoNotes
@@ -166,14 +164,22 @@ struct CheckInView: View {
                     saveEntry()
                 }
             } label: {
-                Text(currentStep == totalSteps - 1 ? "Save Entry" : "Continue")
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(.white)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 54)
-                    .background(Color(hex: "#8B6CAF"), in: RoundedRectangle(cornerRadius: 14))
+                Group {
+                    if isSaving {
+                        ProgressView()
+                            .tint(.white)
+                    } else {
+                        Text(currentStep == totalSteps - 1 ? "Save Entry" : "Continue")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(.white)
+                    }
+                }
+                .frame(maxWidth: .infinity)
+                .frame(height: 54)
+                .background(Color(hex: "#8B6CAF"), in: RoundedRectangle(cornerRadius: 14))
             }
             .buttonStyle(.plain)
+            .disabled(isSaving)
         }
     }
 
@@ -207,32 +213,38 @@ struct CheckInView: View {
     // MARK: Save
 
     private func saveEntry() {
+        guard !isSaving else { return }
+        isSaving = true
+
         let entry = DiaryEntry(
             emotionalLevel: emotionalLevel,
             emotionTags: Array(selectedEmotions),
             bodySensations: bodySensations,
             journalText: journalText,
             promptAnswers: promptAnswers,
-            sleepBedtime: sleepEnabled ? sleepBedtime : nil,
-            sleepWakeTime: sleepEnabled ? sleepWakeTime : nil,
-            sleepQuality: sleepEnabled ? sleepQuality : nil,
-            sleepWakeups: sleepEnabled ? sleepWakeups : nil,
-            sleepHadDreams: sleepEnabled ? (sleepDreams != .none) : nil,
-            sleepNotes: (sleepEnabled && !sleepNotes.isEmpty) ? sleepNotes : nil,
-            libidoLevel: libidoEnabled ? libidoLevel : nil,
-            libidoContextTags: (libidoEnabled && !libidoContextTags.isEmpty) ? Array(libidoContextTags) : nil,
-            libidoNotes: (libidoEnabled && !libidoNotes.isEmpty) ? libidoNotes : nil
+            sleepBedtime: sleepBedtime,
+            sleepWakeTime: sleepWakeTime,
+            sleepQuality: sleepQuality,
+            sleepWakeups: sleepWakeups,
+            sleepHadDreams: sleepDreams != .none,
+            sleepNotes: sleepNotes.isEmpty ? nil : sleepNotes,
+            libidoLevel: libidoLevel,
+            libidoContextTags: libidoContextTags.isEmpty ? nil : Array(libidoContextTags),
+            libidoNotes: libidoNotes.isEmpty ? nil : libidoNotes
         )
         modelContext.insert(entry)
-        do {
-            try modelContext.save()
-            UINotificationFeedbackGenerator().notificationOccurred(.success)
-            withAnimation { isSaved = true }
-        } catch {
-            print("SAVE ERROR: \(error)")
-            modelContext.delete(entry)
-            UINotificationFeedbackGenerator().notificationOccurred(.error)
-            saveError = error.localizedDescription
+        Task { @MainActor in
+            do {
+                try modelContext.save()
+                UINotificationFeedbackGenerator().notificationOccurred(.success)
+                withAnimation { isSaved = true }
+            } catch {
+                print("SAVE ERROR: \(error)")
+                modelContext.delete(entry)
+                UINotificationFeedbackGenerator().notificationOccurred(.error)
+                saveError = error.localizedDescription
+                isSaving = false
+            }
         }
     }
 }
@@ -304,6 +316,25 @@ private struct IntensityStepView: View {
                     }
                 }
                 .frame(width: 180, height: 180)
+                .contentShape(Circle())
+                .gesture(
+                    DragGesture(minimumDistance: 0)
+                        .onChanged { value in
+                            let center = CGPoint(x: 90, y: 90)
+                            let dx = value.location.x - center.x
+                            let dy = value.location.y - center.y
+                            var angle = atan2(dy, dx) * 180 / .pi
+                            if angle < 0 { angle += 360 }
+                            var relative = angle - 135
+                            if relative < 0 { relative += 360 }
+                            guard relative <= 270 else { return }
+                            let newLevel = max(1, min(10, Int((relative / 270 * 9).rounded(.toNearestOrAwayFromZero)) + 1))
+                            if newLevel != level {
+                                level = newLevel
+                                UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                            }
+                        }
+                )
 
                 // 1–10 button grid
                 LazyVGrid(
@@ -314,39 +345,6 @@ private struct IntensityStepView: View {
                         intensityButton(n)
                     }
                 }
-
-                // Drag scrubber
-                GeometryReader { geo in
-                    ZStack(alignment: .leading) {
-                        RoundedRectangle(cornerRadius: 8)
-                            .fill(Color.white.opacity(0.12))
-                            .frame(height: 16)
-                        RoundedRectangle(cornerRadius: 8)
-                            .fill(arcColor)
-                            .frame(width: geo.size.width * CGFloat(level) / 10.0, height: 16)
-                            .animation(.spring(response: 0.2), value: level)
-                        Circle()
-                            .fill(.white)
-                            .frame(width: 28, height: 28)
-                            .shadow(color: .black.opacity(0.3), radius: 4, y: 2)
-                            .offset(x: (geo.size.width - 28) * CGFloat(level - 1) / 9.0)
-                            .animation(.spring(response: 0.2), value: level)
-                    }
-                    .contentShape(Rectangle())
-                    .gesture(
-                        DragGesture(minimumDistance: 0)
-                            .onChanged { value in
-                                let fraction = max(0.0, min(1.0, value.location.x / geo.size.width))
-                                let raw = Int((fraction * 9).rounded(.toNearestOrAwayFromZero)) + 1
-                                let newLevel = max(1, min(10, raw))
-                                if newLevel != level {
-                                    level = newLevel
-                                    UIImpactFeedbackGenerator(style: .light).impactOccurred()
-                                }
-                            }
-                    )
-                }
-                .frame(height: 28)
 
                 Spacer(minLength: 12)
             }
@@ -451,7 +449,6 @@ private struct BodyMapStepView: View {
 // MARK: - Step 4: Sleep
 
 private struct SleepStepView: View {
-    @Binding var enabled: Bool
     @Binding var bedtime: Date
     @Binding var wakeTime: Date
     @Binding var quality: Int
@@ -473,46 +470,16 @@ private struct SleepStepView: View {
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: 20) {
-                yesSkipToggle
-
-                if enabled {
-                    bedWakeRow
-                    durationCard
-                    qualitySection
-                    wakeupsSection
-                    dreamsSection
-                    notesSection
-                }
-
+                bedWakeRow
+                durationCard
+                qualitySection
+                wakeupsSection
+                dreamsSection
+                notesSection
                 Spacer(minLength: 16)
             }
             .padding(.bottom, 8)
         }
-    }
-
-    private var yesSkipToggle: some View {
-        HStack(spacing: 8) {
-            yesSkipButton(label: "Yes, log sleep", isOn: enabled) { enabled = true }
-            yesSkipButton(label: "Skip", isOn: !enabled) { enabled = false }
-        }
-    }
-
-    private func yesSkipButton(label: String, isOn: Bool, action: @escaping () -> Void) -> some View {
-        Button {
-            UIImpactFeedbackGenerator(style: .soft).impactOccurred()
-            action()
-        } label: {
-            Text(label)
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(isOn ? .white : Color(hex: "#C4A0E8").opacity(0.8))
-                .frame(maxWidth: .infinity)
-                .frame(height: 50)
-                .background(
-                    RoundedRectangle(cornerRadius: 14)
-                        .fill(isOn ? accent : Color(hex: "#2B1B50"))
-                )
-        }
-        .buttonStyle(.plain)
     }
 
     private var bedWakeRow: some View {
@@ -683,7 +650,6 @@ private struct SleepStepView: View {
 // MARK: - Step 5: Libido
 
 private struct LibidoStepView: View {
-    @Binding var enabled: Bool
     @Binding var level: Int
     @Binding var contextTags: Set<String>
     @Binding var notes: String
@@ -705,43 +671,13 @@ private struct LibidoStepView: View {
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: 20) {
-                yesSkipToggle
-
-                if enabled {
-                    levelSection
-                    tagsSection
-                    notesSection
-                }
-
+                levelSection
+                tagsSection
+                notesSection
                 Spacer(minLength: 16)
             }
             .padding(.bottom, 8)
         }
-    }
-
-    private var yesSkipToggle: some View {
-        HStack(spacing: 8) {
-            yesSkipButton(label: "Yes, track desire", isOn: enabled) { enabled = true }
-            yesSkipButton(label: "Skip", isOn: !enabled) { enabled = false }
-        }
-    }
-
-    private func yesSkipButton(label: String, isOn: Bool, action: @escaping () -> Void) -> some View {
-        Button {
-            UIImpactFeedbackGenerator(style: .soft).impactOccurred()
-            action()
-        } label: {
-            Text(label)
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(isOn ? .white : Color(hex: "#C4A0E8").opacity(0.8))
-                .frame(maxWidth: .infinity)
-                .frame(height: 50)
-                .background(
-                    RoundedRectangle(cornerRadius: 14)
-                        .fill(isOn ? accent : Color(hex: "#2B1B50"))
-                )
-        }
-        .buttonStyle(.plain)
     }
 
     private var levelSection: some View {
