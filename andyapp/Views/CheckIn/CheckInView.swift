@@ -15,6 +15,18 @@ struct CheckInView: View {
     @State private var promptAnswers: [String: String] = [:]
     @State private var isSaved = false
 
+    // Sleep tracking
+    @State private var sleepBedtime: Date? = nil
+    @State private var sleepWakeTime: Date? = nil
+    @State private var sleepQuality: Int = 5
+    @State private var sleepWakeups: Int = 0
+    @State private var sleepHadDreams: Bool = false
+    @State private var sleepNotes: String = ""
+
+    // Libido tracking
+    @State private var libidoLevel: Int? = nil
+    @State private var libidoNotes: String = ""
+
     private let totalSteps = 4
 
     private var stepTitles: [String] {
@@ -89,7 +101,18 @@ struct CheckInView: View {
         case 0: IntensityStepView(level: $emotionalLevel)
         case 1: EmotionsStepView(selectedEmotions: $selectedEmotions)
         case 2: BodyMapStepView(sensations: $bodySensations)
-        default: JournalStepView(journalText: $journalText, promptAnswers: $promptAnswers)
+        default: JournalStepView(
+            journalText: $journalText,
+            promptAnswers: $promptAnswers,
+            sleepBedtime: $sleepBedtime,
+            sleepWakeTime: $sleepWakeTime,
+            sleepQuality: $sleepQuality,
+            sleepWakeups: $sleepWakeups,
+            sleepHadDreams: $sleepHadDreams,
+            sleepNotes: $sleepNotes,
+            libidoLevel: $libidoLevel,
+            libidoNotes: $libidoNotes
+        )
         }
     }
 
@@ -163,7 +186,15 @@ struct CheckInView: View {
             emotionTags: Array(selectedEmotions),
             bodySensations: bodySensations,
             journalText: journalText,
-            promptAnswers: promptAnswers
+            promptAnswers: promptAnswers,
+            sleepBedtime: sleepBedtime,
+            sleepWakeTime: sleepWakeTime,
+            sleepQuality: sleepQuality,
+            sleepWakeups: sleepWakeups,
+            sleepHadDreams: sleepHadDreams,
+            sleepNotes: sleepNotes.isEmpty ? nil : sleepNotes,
+            libidoLevel: libidoLevel,
+            libidoNotes: libidoNotes.isEmpty ? nil : libidoNotes
         )
         modelContext.insert(entry)
         try? modelContext.save()
@@ -231,26 +262,49 @@ private struct IntensityStepView: View {
             }
             .frame(width: 210, height: 210)
 
-            HStack(spacing: 7) {
-                ForEach(1...10, id: \.self) { lv in
-                    Button {
-                        UIImpactFeedbackGenerator(style: .light).impactOccurred()
-                        level = lv
-                    } label: {
-                        Circle()
-                            .fill(level >= lv ? arcColor : Color(hex: "#2B1B50"))
-                            .frame(width: 26, height: 26)
-                            .overlay(
-                                Text("\(lv)")
-                                    .font(.system(size: 10, weight: .semibold))
-                                    .foregroundStyle(level >= lv ? .white : Color(hex: "#6D5F80"))
-                            )
-                            .scaleEffect(level == lv ? 1.22 : 1.0)
-                            .animation(.spring(response: 0.2), value: level)
-                    }
-                    .buttonStyle(.plain)
+            // Drag scrubber
+            GeometryReader { geo in
+                ZStack(alignment: .leading) {
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(Color.white.opacity(0.12))
+                        .frame(height: 16)
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(arcColor)
+                        .frame(width: geo.size.width * CGFloat(level) / 10.0, height: 16)
+                        .animation(.spring(response: 0.2), value: level)
+                    Circle()
+                        .fill(.white)
+                        .frame(width: 28, height: 28)
+                        .shadow(color: .black.opacity(0.3), radius: 4, y: 2)
+                        .offset(x: (geo.size.width - 28) * CGFloat(level - 1) / 9.0)
+                        .animation(.spring(response: 0.2), value: level)
                 }
+                .contentShape(Rectangle())
+                .gesture(
+                    DragGesture(minimumDistance: 0)
+                        .onChanged { value in
+                            let fraction = max(0.0, min(1.0, value.location.x / geo.size.width))
+                            let raw = Int((fraction * 9).rounded(.toNearestOrAwayFromZero)) + 1
+                            let newLevel = max(1, min(10, raw))
+                            if newLevel != level {
+                                level = newLevel
+                                UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                            }
+                        }
+                )
             }
+            .frame(height: 28)
+            .padding(.horizontal, 14)
+
+            HStack {
+                Text("1").font(.caption).foregroundStyle(.secondary)
+                Spacer()
+                Text("5").font(.caption).foregroundStyle(.secondary)
+                Spacer()
+                Text("10").font(.caption).foregroundStyle(.secondary)
+            }
+            .padding(.horizontal, 14)
+            .offset(y: -36)
         }
     }
 }
@@ -323,11 +377,20 @@ private struct BodyMapStepView: View {
     }
 }
 
-// MARK: - Step 4: Journal
+// MARK: - Step 4: Journal + Wellness
 
 private struct JournalStepView: View {
     @Binding var journalText: String
     @Binding var promptAnswers: [String: String]
+    @Binding var sleepBedtime: Date?
+    @Binding var sleepWakeTime: Date?
+    @Binding var sleepQuality: Int
+    @Binding var sleepWakeups: Int
+    @Binding var sleepHadDreams: Bool
+    @Binding var sleepNotes: String
+    @Binding var libidoLevel: Int?
+    @Binding var libidoNotes: String
+
     @FocusState private var editorFocused: Bool
 
     private let placeholders = [
@@ -366,7 +429,7 @@ private struct JournalStepView: View {
                 .background(Color(hex: "#231441"), in: RoundedRectangle(cornerRadius: 16))
                 .onAppear { placeholderIdx = Int.random(in: 0..<placeholders.count) }
 
-                // Optional depth prompts
+                // Guided prompts
                 VStack(alignment: .leading, spacing: 10) {
                     Text("Optional reflections")
                         .font(.caption.weight(.semibold))
@@ -392,6 +455,28 @@ private struct JournalStepView: View {
                             .background(Color(hex: "#2B1B50"), in: RoundedRectangle(cornerRadius: 10))
                         }
                     }
+                }
+
+                // Wellness tracking cards
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("Wellness tracking")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                        .textCase(.uppercase)
+
+                    SleepTrackingView(
+                        bedtime: $sleepBedtime,
+                        wakeTime: $sleepWakeTime,
+                        quality: $sleepQuality,
+                        wakeups: $sleepWakeups,
+                        hadDreams: $sleepHadDreams,
+                        notes: $sleepNotes
+                    )
+
+                    LibidoTrackingView(
+                        level: $libidoLevel,
+                        notes: $libidoNotes
+                    )
                 }
             }
             .padding(.bottom, 8)

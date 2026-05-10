@@ -27,7 +27,7 @@ struct DiaryTimelineView: View {
                     timelineList
                 }
             }
-            .navigationTitle("Andy")
+            .navigationTitle("Medicus")
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     Button { showSettings = true } label: {

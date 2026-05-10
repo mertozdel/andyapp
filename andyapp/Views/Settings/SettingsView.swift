@@ -1,7 +1,10 @@
 import SwiftUI
+import SwiftData
 
 struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
+    @Query(sort: \DiaryEntry.createdAt, order: .reverse) private var entries: [DiaryEntry]
+    @State private var showExport = false
 
     var body: some View {
         NavigationStack {
@@ -13,6 +16,24 @@ struct SettingsView: View {
                         .font(.subheadline)
                 } header: {
                     Text("Privacy")
+                }
+
+                Section("Data") {
+                    Button {
+                        showExport = true
+                    } label: {
+                        HStack {
+                            Label("Export your data", systemImage: "square.and.arrow.up")
+                            Spacer()
+                            Text("\(entries.count) entries")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                            Image(systemName: "chevron.right")
+                                .font(.caption)
+                                .foregroundStyle(.tertiary)
+                        }
+                    }
+                    .foregroundStyle(.primary)
                 }
 
                 Section("About") {
@@ -37,6 +58,9 @@ struct SettingsView: View {
                         .foregroundStyle(Color(hex: "#8B6CAF"))
                 }
             }
+        }
+        .sheet(isPresented: $showExport) {
+            ExportView(entries: entries)
         }
     }
 }
