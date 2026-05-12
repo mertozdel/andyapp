@@ -3,64 +3,56 @@ import SwiftData
 
 struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
-    @Query(sort: \DiaryEntry.createdAt, order: .reverse) private var entries: [DiaryEntry]
-    @State private var showExport = false
+    @EnvironmentObject private var loc: LocalizationManager
 
     var body: some View {
         NavigationStack {
             List {
                 Section {
-                    Label("All diary entries are stored only on this device.", systemImage: "lock.fill")
+                    Label(L10n.privacyLine1(loc.language), systemImage: "lock.fill")
                         .font(.subheadline)
-                    Label("Nothing is ever sent to the internet from your diary.", systemImage: "wifi.slash")
+                    Label(L10n.privacyLine2(loc.language), systemImage: "wifi.slash")
                         .font(.subheadline)
                 } header: {
-                    Text("Privacy")
+                    Text(L10n.privacyHeader(loc.language))
                 }
 
-                Section("Data") {
-                    Button {
-                        showExport = true
-                    } label: {
-                        HStack {
-                            Label("Export your data", systemImage: "square.and.arrow.up")
-                            Spacer()
-                            Text("\(entries.count) entries")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                            Image(systemName: "chevron.right")
-                                .font(.caption)
-                                .foregroundStyle(.tertiary)
+                Section(L10n.languageHeader(loc.language)) {
+                    Picker(selection: Binding(
+                        get: { loc.language },
+                        set: { loc.language = $0 }
+                    )) {
+                        ForEach(AppLanguage.allCases) { l in
+                            Text(l.displayName).tag(l)
                         }
+                    } label: {
+                        Label(L10n.languageLabel(loc.language), systemImage: "globe")
                     }
-                    .foregroundStyle(.primary)
+                    .pickerStyle(.menu)
                 }
 
-                Section("About") {
+                Section(L10n.aboutHeader(loc.language)) {
                     HStack {
-                        Text("Version")
+                        Text(L10n.versionLabel(loc.language))
                         Spacer()
                         Text("1.0.0").foregroundStyle(.secondary)
                     }
                     HStack {
-                        Text("Built with")
+                        Text(L10n.builtWithLabel(loc.language))
                         Spacer()
                         Text("SwiftUI + SwiftData").foregroundStyle(.secondary)
                     }
                 }
             }
-            .navigationTitle("Settings")
+            .navigationTitle(L10n.settingsTitle(loc.language))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") { dismiss() }
+                    Button(L10n.done(loc.language)) { dismiss() }
                         .fontWeight(.semibold)
                         .foregroundStyle(Color(hex: "#8B6CAF"))
                 }
             }
-        }
-        .sheet(isPresented: $showExport) {
-            ExportView(entries: entries)
         }
     }
 }

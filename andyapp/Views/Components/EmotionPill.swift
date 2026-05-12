@@ -5,11 +5,13 @@ struct EmotionPill: View {
     var isSelected: Bool = false
     var isSmall: Bool = false
 
+    @EnvironmentObject private var loc: LocalizationManager
+
     var body: some View {
         HStack(spacing: isSmall ? 3 : 5) {
             Text(emotion.emoji)
                 .font(.system(size: isSmall ? 10 : 14))
-            Text(emotion.displayName)
+            Text(emotion.localizedName(loc.language))
                 .font(isSmall ? .caption2.weight(.medium) : .caption.weight(.medium))
         }
         .padding(.horizontal, isSmall ? 7 : 10)

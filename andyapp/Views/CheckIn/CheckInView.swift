@@ -6,6 +6,7 @@ import SwiftData
 struct CheckInView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject private var loc: LocalizationManager
 
     @State private var currentStep = 0
     @State private var emotionalLevel: Int = 5
@@ -35,12 +36,12 @@ struct CheckInView: View {
 
     private var stepTitles: [String] {
         [
-            "How intense is it?",
-            "What are you feeling?",
-            "Where do you feel it?",
-            "How did you sleep?",
-            "Desire & libido",
-            "Tell me more"
+            L10n.step1Title(loc.language),
+            L10n.step2Title(loc.language),
+            L10n.step3Title(loc.language),
+            L10n.step4Title(loc.language),
+            L10n.step5Title(loc.language),
+            L10n.step6Title(loc.language)
         ]
     }
 
@@ -82,18 +83,18 @@ struct CheckInView: View {
             .toolbar {
                 if !isSaved {
                     ToolbarItem(placement: .cancellationAction) {
-                        Button("Cancel") { dismiss() }
+                        Button(L10n.cancel(loc.language)) { dismiss() }
                             .foregroundStyle(.secondary)
                     }
                 }
             }
             .animation(.spring(response: 0.42, dampingFraction: 0.88), value: currentStep)
             .animation(.spring(response: 0.42), value: isSaved)
-            .alert("Couldn't save entry", isPresented: Binding(
+            .alert(L10n.couldNotSave(loc.language), isPresented: Binding(
                 get: { saveError != nil },
                 set: { if !$0 { saveError = nil } }
             )) {
-                Button("OK", role: .cancel) { saveError = nil }
+                Button(L10n.ok(loc.language), role: .cancel) { saveError = nil }
             } message: {
                 Text(saveError ?? "")
             }
@@ -169,7 +170,9 @@ struct CheckInView: View {
                         ProgressView()
                             .tint(.white)
                     } else {
-                        Text(currentStep == totalSteps - 1 ? "Save Entry" : "Continue")
+                        Text(currentStep == totalSteps - 1
+                             ? L10n.saveEntry(loc.language)
+                             : L10n.continueBtn(loc.language))
                             .font(.subheadline.weight(.semibold))
                             .foregroundStyle(.white)
                     }
@@ -192,14 +195,14 @@ struct CheckInView: View {
                 .font(.system(size: 64))
                 .foregroundStyle(Color(hex: "#55EFC4"))
             VStack(spacing: 8) {
-                Text("Entry saved")
+                Text(L10n.entrySaved(loc.language))
                     .font(.title2.weight(.semibold))
-                Text("You checked in with yourself.")
+                Text(L10n.entrySavedSub(loc.language))
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             }
             Spacer()
-            Button("Done") { dismiss() }
+            Button(L10n.done(loc.language)) { dismiss() }
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(.white)
                 .frame(maxWidth: .infinity)
@@ -255,12 +258,21 @@ enum SleepDreams: String, CaseIterable {
     case none = "None"
     case pleasant = "Pleasant"
     case disturbing = "Disturbing"
+
+    func localized(_ lang: AppLanguage) -> String {
+        switch self {
+        case .none:       return L10n.dreamsNone(lang)
+        case .pleasant:   return L10n.dreamsPleasant(lang)
+        case .disturbing: return L10n.dreamsDisturbing(lang)
+        }
+    }
 }
 
 // MARK: - Step 1: Intensity
 
 private struct IntensityStepView: View {
     @Binding var level: Int
+    @EnvironmentObject private var loc: LocalizationManager
 
     private var fraction: Double { Double(level) / 10.0 }
 
@@ -275,11 +287,11 @@ private struct IntensityStepView: View {
 
     private var label: String {
         switch level {
-        case 1...2: return "Barely there"
-        case 3...4: return "Noticeable"
-        case 5...6: return "Quite intense"
-        case 7...8: return "Very intense"
-        default:    return "Overwhelming"
+        case 1...2: return L10n.intensityBarely(loc.language)
+        case 3...4: return L10n.intensityNoticeable(loc.language)
+        case 5...6: return L10n.intensityQuite(loc.language)
+        case 7...8: return L10n.intensityVery(loc.language)
+        default:    return L10n.intensityOverwhelming(loc.language)
         }
     }
 
@@ -383,10 +395,11 @@ private struct IntensityStepView: View {
 
 private struct EmotionsStepView: View {
     @Binding var selectedEmotions: Set<Emotion>
+    @EnvironmentObject private var loc: LocalizationManager
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Select all that apply")
+            Text(L10n.selectAllApply(loc.language))
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
 
@@ -412,7 +425,7 @@ private struct EmotionsStepView: View {
         } label: {
             HStack(spacing: 6) {
                 Text(emotion.emoji).font(.system(size: 16))
-                Text(emotion.displayName).font(.subheadline.weight(.medium))
+                Text(emotion.localizedName(loc.language)).font(.subheadline.weight(.medium))
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, 12)
@@ -435,10 +448,11 @@ private struct EmotionsStepView: View {
 
 private struct BodyMapStepView: View {
     @Binding var sensations: [BodySensation]
+    @EnvironmentObject private var loc: LocalizationManager
 
     var body: some View {
         VStack(spacing: 10) {
-            Text("Optional — skip if you don't feel it in your body")
+            Text(L10n.bodyMapOptional(loc.language))
                 .font(.footnote)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
@@ -456,6 +470,7 @@ private struct SleepStepView: View {
     @Binding var wakeups: Int
     @Binding var dreams: SleepDreams
     @Binding var notes: String
+    @EnvironmentObject private var loc: LocalizationManager
 
     private let accent = Color(hex: "#6C5CE7")
 
@@ -485,8 +500,8 @@ private struct SleepStepView: View {
 
     private var bedWakeRow: some View {
         HStack(spacing: 12) {
-            timeCard(title: "Bedtime", binding: $bedtime)
-            timeCard(title: "Wake time", binding: $wakeTime)
+            timeCard(title: L10n.bedtime(loc.language), binding: $bedtime)
+            timeCard(title: L10n.wakeTime(loc.language), binding: $wakeTime)
         }
     }
 
@@ -509,7 +524,7 @@ private struct SleepStepView: View {
         HStack {
             Image(systemName: "clock.fill")
                 .foregroundStyle(accent)
-            Text("Duration")
+            Text(L10n.duration(loc.language))
                 .font(.subheadline.weight(.medium))
                 .foregroundStyle(.secondary)
             Spacer()
@@ -524,7 +539,7 @@ private struct SleepStepView: View {
     private var qualitySection: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
-                Text("Sleep quality")
+                Text(L10n.sleepQuality(loc.language))
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(.secondary)
                     .textCase(.uppercase)
@@ -567,7 +582,7 @@ private struct SleepStepView: View {
 
     private var wakeupsSection: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("Times woken up")
+            Text(L10n.timesWokenUp(loc.language))
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(.secondary)
                 .textCase(.uppercase)
@@ -601,7 +616,7 @@ private struct SleepStepView: View {
 
     private var dreamsSection: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("Dreams")
+            Text(L10n.dreams(loc.language))
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(.secondary)
                 .textCase(.uppercase)
@@ -619,7 +634,7 @@ private struct SleepStepView: View {
             dreams = option
             UIImpactFeedbackGenerator(style: .soft).impactOccurred()
         } label: {
-            Text(option.rawValue)
+            Text(option.localized(loc.language))
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(on ? .white : Color(hex: "#C4A0E8").opacity(0.8))
                 .frame(maxWidth: .infinity)
@@ -634,11 +649,11 @@ private struct SleepStepView: View {
 
     private var notesSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Notes")
+            Text(L10n.notes(loc.language))
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(.secondary)
                 .textCase(.uppercase)
-            TextField("Anything else about your sleep…", text: $notes, axis: .vertical)
+            TextField(L10n.sleepNotesPlaceholder(loc.language), text: $notes, axis: .vertical)
                 .lineLimit(1...4)
                 .font(.callout)
                 .textFieldStyle(.plain)
@@ -654,6 +669,7 @@ private struct LibidoStepView: View {
     @Binding var level: Int
     @Binding var contextTags: Set<String>
     @Binding var notes: String
+    @EnvironmentObject private var loc: LocalizationManager
 
     private let accent = Color(hex: "#E17055")
 
@@ -661,11 +677,22 @@ private struct LibidoStepView: View {
 
     private var levelLabel: String {
         switch level {
-        case 1...2: return "Very low"
-        case 3...4: return "Low"
-        case 5...6: return "Moderate"
-        case 7...8: return "High"
-        default:    return "Very high"
+        case 1...2: return L10n.desireVeryLow(loc.language)
+        case 3...4: return L10n.desireLow(loc.language)
+        case 5...6: return L10n.desireModerate(loc.language)
+        case 7...8: return L10n.desireHigh(loc.language)
+        default:    return L10n.desireVeryHigh(loc.language)
+        }
+    }
+
+    private func localizedTag(_ tag: String) -> String {
+        switch tag {
+        case "Spontaneous": return L10n.libidoSpontaneous(loc.language)
+        case "Responsive":  return L10n.libidoResponsive(loc.language)
+        case "Low":         return L10n.libidoLow(loc.language)
+        case "Distracted":  return L10n.libidoDistracted(loc.language)
+        case "Connected":   return L10n.libidoConnected(loc.language)
+        default:            return tag
         }
     }
 
@@ -684,7 +711,7 @@ private struct LibidoStepView: View {
     private var levelSection: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
-                Text("Desire level")
+                Text(L10n.desireLevel(loc.language))
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(.secondary)
                     .textCase(.uppercase)
@@ -727,7 +754,7 @@ private struct LibidoStepView: View {
 
     private var tagsSection: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("Context")
+            Text(L10n.context(loc.language))
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(.secondary)
                 .textCase(.uppercase)
@@ -748,7 +775,7 @@ private struct LibidoStepView: View {
             UIImpactFeedbackGenerator(style: .soft).impactOccurred()
             if on { contextTags.remove(tag) } else { contextTags.insert(tag) }
         } label: {
-            Text(tag)
+            Text(localizedTag(tag))
                 .font(.subheadline.weight(.medium))
                 .foregroundStyle(on ? .white : Color(hex: "#C4A0E8").opacity(0.8))
                 .frame(maxWidth: .infinity)
@@ -764,11 +791,11 @@ private struct LibidoStepView: View {
 
     private var notesSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Notes")
+            Text(L10n.notes(loc.language))
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(.secondary)
                 .textCase(.uppercase)
-            TextField("Any thoughts…", text: $notes, axis: .vertical)
+            TextField(L10n.libidoNotesPlaceholder(loc.language), text: $notes, axis: .vertical)
                 .lineLimit(1...4)
                 .font(.callout)
                 .textFieldStyle(.plain)
@@ -783,22 +810,27 @@ private struct LibidoStepView: View {
 private struct JournalStepView: View {
     @Binding var journalText: String
     @Binding var promptAnswers: [String: String]
+    @EnvironmentObject private var loc: LocalizationManager
 
     @FocusState private var editorFocused: Bool
 
-    private let placeholders = [
-        "What's on your mind?",
-        "Where are you right now?",
-        "What does your body want you to know?",
-        "How did your day unfold?",
-    ]
+    private var placeholders: [String] {
+        [
+            L10n.journalPh1(loc.language),
+            L10n.journalPh2(loc.language),
+            L10n.journalPh3(loc.language),
+            L10n.journalPh4(loc.language),
+        ]
+    }
     @State private var placeholderIdx = 0
 
-    private let prompts: [(key: String, question: String)] = [
-        ("trigger",   "What triggered this feeling?"),
-        ("need",      "What do you think you need right now?"),
-        ("gratitude", "One small thing you noticed today"),
-    ]
+    private var prompts: [(key: String, question: String)] {
+        [
+            ("trigger",   L10n.promptTrigger(loc.language)),
+            ("need",      L10n.promptNeed(loc.language)),
+            ("gratitude", L10n.promptGratitude(loc.language)),
+        ]
+    }
 
     var body: some View {
         ScrollView(showsIndicators: false) {
@@ -822,7 +854,7 @@ private struct JournalStepView: View {
                 .onAppear { placeholderIdx = Int.random(in: 0..<placeholders.count) }
 
                 VStack(alignment: .leading, spacing: 10) {
-                    Text("Optional reflections")
+                    Text(L10n.optionalReflections(loc.language))
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(.secondary)
                         .textCase(.uppercase)

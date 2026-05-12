@@ -6,6 +6,7 @@ import SwiftData
 enum ExportMode: Equatable {
     case date
     case entry
+    case multiple
 }
 
 // MARK: - ExportService
@@ -21,19 +22,19 @@ enum ExportService {
         }
     }
 
-    private static func intensityLabelText(for level: Int) -> String {
+    private static func intensityLabelText(for level: Int, language: AppLanguage) -> String {
         switch level {
-        case 1...2: return "Barely there"
-        case 3...4: return "Noticeable"
-        case 5...6: return "Quite intense"
-        case 7...8: return "Very intense"
-        default:    return "Overwhelming"
+        case 1...2: return L10n.intensityBarely(language)
+        case 3...4: return L10n.intensityNoticeable(language)
+        case 5...6: return L10n.intensityQuite(language)
+        case 7...8: return L10n.intensityVery(language)
+        default:    return L10n.intensityOverwhelming(language)
         }
     }
 
     // MARK: PDF
 
-    static func generatePDF(entries: [DiaryEntry]) -> Data {
+    static func generatePDF(entries: [DiaryEntry], language: AppLanguage) -> Data {
         let pageRect  = CGRect(x: 0, y: 0, width: 612, height: 792)
         let margin: CGFloat = 50
         let cw        = pageRect.width - margin * 2
@@ -49,9 +50,11 @@ enum ExportService {
 
         // Formatters
         let df = DateFormatter()
+        df.locale = language.locale
         df.dateStyle = .long
         df.timeStyle = .none
         let tf = DateFormatter()
+        tf.locale = language.locale
         tf.dateStyle = .none
         tf.timeStyle = .short
 
@@ -80,7 +83,7 @@ enum ExportService {
             }
 
             func drawFooter() {
-                let text = "Page \(pageNumber)  ·  Medicus — Personal Diary"
+                let text = L10n.pdfFooter(language, pageNumber)
                 let attrs: [NSAttributedString.Key: Any] = [.font: footerFont, .foregroundColor: UIColor.lightGray]
                 let sa = NSAttributedString(string: text, attributes: attrs)
                 let sz = sa.boundingRect(with: CGSize(width: cw, height: 20), options: [], context: nil)
@@ -146,17 +149,25 @@ enum ExportService {
             UIColor.white.withAlphaComponent(0.06).setFill()
             UIBezierPath(rect: CGRect(x: 0, y: headerH - 14, width: pageRect.width, height: 14)).fill()
 
-            NSAttributedString(string: "Medicus",
+            NSAttributedString(string: L10n.pdfHeaderTitle(language),
                 attributes: [.font: appFont, .foregroundColor: UIColor.white]
             ).draw(at: CGPoint(x: margin, y: 13))
 
+            let entryWord = entries.count == 1
+                ? L10n.entrySingular(language)
+                : L10n.entryPlural(language)
             NSAttributedString(
-                string: "Personal Diary  ·  PDF Export  ·  \(entries.count) \(entries.count == 1 ? "entry" : "entries")",
+                string: L10n.pdfSubtitle(language, entries.count, entryWord),
                 attributes: [.font: subtitleFont, .foregroundColor: UIColor.white.withAlphaComponent(0.80)]
             ).draw(at: CGPoint(x: margin, y: 48))
 
+            let exportedDateStr = DateFormatter.localizedString(
+                from: Date(),
+                dateStyle: .long,
+                timeStyle: .short
+            )
             NSAttributedString(
-                string: "Exported  \(DateFormatter.localizedString(from: Date(), dateStyle: .long, timeStyle: .short))",
+                string: L10n.pdfExported(language, exportedDateStr),
                 attributes: [.font: tsFont, .foregroundColor: UIColor.white.withAlphaComponent(0.52)]
             ).draw(at: CGPoint(x: margin, y: 68))
 
@@ -169,7 +180,7 @@ enum ExportService {
                 if y > pageRect.height - margin - 110 { newPage() }
 
                 let iColor = intensityUIColor(for: entry.emotionalLevel)
-                let iLabel = intensityLabelText(for: entry.emotionalLevel)
+                let iLabel = intensityLabelText(for: entry.emotionalLevel, language: language)
                 let dateStr = df.string(from: entry.createdAt)
                 let timeStr = tf.string(from: entry.createdAt)
 
@@ -201,41 +212,43 @@ enum ExportService {
                 y += cardH + 16
 
                 // ── EMOTIONAL CHECK-IN ──────────────────────────────────────
-                let emotions = entry.emotions.map(\.displayName)
+                let emotions = entry.emotions.map { $0.localizedName(language) }
                 if !emotions.isEmpty {
-                    sectionHeader("EMOTIONAL CHECK-IN", color: purple)
+                    sectionHeader(L10n.pdfEmotional(language), color: purple)
                     draw(emotions.joined(separator: "  ·  "), font: captionFont, color: .darkGray, after: 12)
                 }
 
                 // ── JOURNAL ─────────────────────────────────────────────────
                 if !entry.journalText.isEmpty {
-                    sectionHeader("JOURNAL", color: charcoal)
+                    sectionHeader(L10n.pdfJournal(language), color: charcoal)
                     draw(entry.journalText, font: bodyFont, after: 12)
                 }
 
                 // ── BODY SENSATIONS ─────────────────────────────────────────
                 let sensations = entry.bodySensations
                 if !sensations.isEmpty {
-                    sectionHeader("BODY SENSATIONS", color: teal)
-                    draw("\(sensations.count) sensation area\(sensations.count == 1 ? "" : "s") noted",
-                         font: captionFont, color: .darkGray, after: 12)
+                    sectionHeader(L10n.pdfBodySensations(language), color: teal)
+                    let line = sensations.count == 1
+                        ? L10n.pdfSensationsNotedSingular(language)
+                        : L10n.pdfSensationsNotedPlural(language, sensations.count)
+                    draw(line, font: captionFont, color: .darkGray, after: 12)
                 }
 
                 // ── SLEEP ───────────────────────────────────────────────────
                 if entry.hasSleepData {
-                    sectionHeader("SLEEP", color: indigo)
+                    sectionHeader(L10n.pdfSleep(language), color: indigo)
                     var sleepParts: [String] = []
-                    if let dur = entry.sleepDurationFormatted { sleepParts.append("Duration: \(dur)") }
-                    if let q   = entry.sleepQuality           { sleepParts.append("Quality: \(q)/10") }
-                    if let w   = entry.sleepWakeups            { sleepParts.append("Wakeups: \(w)") }
+                    if let dur = entry.sleepDurationFormatted { sleepParts.append(L10n.pdfDuration(language, dur)) }
+                    if let q   = entry.sleepQuality           { sleepParts.append(L10n.pdfQuality(language, q)) }
+                    if let w   = entry.sleepWakeups           { sleepParts.append(L10n.pdfWakeups(language, w)) }
                     if !sleepParts.isEmpty {
                         draw(sleepParts.joined(separator: "     "), font: captionFont, color: .darkGray, after: 4)
                     }
                     if entry.sleepHadDreams == true {
-                        draw("Had dreams", font: captionFont, color: .darkGray, after: 4)
+                        draw(L10n.pdfHadDreams(language), font: captionFont, color: .darkGray, after: 4)
                     }
                     if let notes = entry.sleepNotes, !notes.isEmpty {
-                        draw("Notes: \(notes)", font: captionFont, color: .gray, indent: 10, after: 12)
+                        draw(L10n.pdfNotes(language, notes), font: captionFont, color: .gray, indent: 10, after: 12)
                     } else {
                         y += 8
                     }
@@ -243,14 +256,14 @@ enum ExportService {
 
                 // ── DESIRE ──────────────────────────────────────────────────
                 if let lvl = entry.libidoLevel {
-                    sectionHeader("DESIRE", color: orange)
-                    var desireParts = ["Level: \(lvl)/10"]
+                    sectionHeader(L10n.pdfDesire(language), color: orange)
+                    var desireParts = [L10n.pdfDesireLevel(language, lvl)]
                     if let tags = entry.libidoContextTags, !tags.isEmpty {
                         desireParts.append(tags.joined(separator: ", "))
                     }
                     draw(desireParts.joined(separator: "   ·   "), font: captionFont, color: .darkGray, after: 4)
                     if let notes = entry.libidoNotes, !notes.isEmpty {
-                        draw("Notes: \(notes)", font: captionFont, color: .gray, indent: 10, after: 12)
+                        draw(L10n.pdfNotes(language, notes), font: captionFont, color: .gray, indent: 10, after: 12)
                     } else {
                         y += 8
                     }
@@ -259,13 +272,13 @@ enum ExportService {
                 // ── REFLECTIONS ─────────────────────────────────────────────
                 let answers = entry.promptAnswers
                 let pairs: [(String, String)] = [
-                    ("What triggered this?",        answers["trigger"]   ?? ""),
-                    ("What do you need right now?", answers["need"]      ?? ""),
-                    ("One small thing noticed",     answers["gratitude"] ?? ""),
+                    (L10n.pdfWhatTriggered(language),  answers["trigger"]   ?? ""),
+                    (L10n.pdfWhatNeed(language),       answers["need"]      ?? ""),
+                    (L10n.pdfOneSmallThing(language),  answers["gratitude"] ?? ""),
                 ].filter { !$0.1.isEmpty }
 
                 if !pairs.isEmpty {
-                    sectionHeader("REFLECTIONS", color: slate)
+                    sectionHeader(L10n.pdfReflections(language), color: slate)
                     for (q, a) in pairs {
                         draw(q, font: questionFont, color: .gray, after: 2)
                         draw(a, font: bodyFont, indent: 12, after: 8)
@@ -309,13 +322,24 @@ enum ExportService {
 struct ExportView: View {
     let entries: [DiaryEntry]
     @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject private var loc: LocalizationManager
 
-    @State private var exportMode: ExportMode = .date
+    @State private var exportMode: ExportMode
     @State private var pickedDate: Date = Date()
     @State private var pickedEntry: DiaryEntry? = nil
+    @State private var selectedIDs: Set<UUID>
     @State private var showEntryPicker = false
+    @State private var showMultiPicker = false
     @State private var shareItem: IdentifiableURL?
     @State private var isGenerating = false
+
+    init(entries: [DiaryEntry],
+         initialMode: ExportMode = .date,
+         preselected: Set<UUID> = []) {
+        self.entries = entries
+        _exportMode  = State(initialValue: initialMode)
+        _selectedIDs = State(initialValue: preselected)
+    }
 
     // MARK: Filtered entries
 
@@ -325,23 +349,28 @@ struct ExportView: View {
             return entries.filter { Calendar.current.isDate($0.createdAt, inSameDayAs: pickedDate) }
         case .entry:
             return pickedEntry.map { [$0] } ?? []
+        case .multiple:
+            return entries.filter { selectedIDs.contains($0.id) }
         }
     }
 
     private var previewText: String {
+        let lang = loc.language
         switch exportMode {
         case .date:
             let c = entriesToExport.count
-            if c == 0 {
-                let df = DateFormatter(); df.dateStyle = .medium; df.timeStyle = .none
-                return "No entries on \(df.string(from: pickedDate))"
-            }
-            let df = DateFormatter(); df.dateStyle = .medium; df.timeStyle = .none
-            return "\(c) \(c == 1 ? "entry" : "entries") · \(df.string(from: pickedDate))"
+            let df = DateFormatter(); df.locale = lang.locale; df.dateStyle = .medium; df.timeStyle = .none
+            if c == 0 { return L10n.noEntriesOn(lang, df.string(from: pickedDate)) }
+            if c == 1 { return L10n.entryOnDate(lang, df.string(from: pickedDate)) }
+            return L10n.entriesOnDate(lang, c, df.string(from: pickedDate))
         case .entry:
-            guard let e = pickedEntry else { return "No entry selected" }
-            let df = DateFormatter(); df.dateStyle = .medium; df.timeStyle = .none
-            return "1 entry · \(df.string(from: e.createdAt))"
+            guard let e = pickedEntry else { return L10n.noEntrySelected(lang) }
+            let df = DateFormatter(); df.locale = lang.locale; df.dateStyle = .medium; df.timeStyle = .none
+            return L10n.entryOnDate(lang, df.string(from: e.createdAt))
+        case .multiple:
+            let c = entriesToExport.count
+            if c == 0 { return L10n.noEntriesSelected(lang) }
+            return L10n.entriesCountSelected(lang, c)
         }
     }
 
@@ -356,11 +385,15 @@ struct ExportView: View {
                     VStack(spacing: 20) {
                         modeToggle
 
-                        if exportMode == .date {
+                        switch exportMode {
+                        case .date:
                             calendarCard
                                 .transition(.opacity.combined(with: .move(edge: .top)))
-                        } else {
+                        case .entry:
                             entryPickerCard
+                                .transition(.opacity.combined(with: .move(edge: .top)))
+                        case .multiple:
+                            multiplePickerCard
                                 .transition(.opacity.combined(with: .move(edge: .top)))
                         }
 
@@ -373,25 +406,27 @@ struct ExportView: View {
                     .animation(.spring(response: 0.38, dampingFraction: 0.88), value: exportMode)
                 }
             }
-            .navigationTitle("Send")
+            .navigationTitle(L10n.sendTitle(loc.language))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
+                    Button(L10n.cancel(loc.language)) { dismiss() }
                         .foregroundStyle(.secondary)
                 }
             }
             .sheet(item: $shareItem) { item in ShareSheet(url: item.url) }
             .sheet(isPresented: $showEntryPicker) { entryPickerSheet }
+            .sheet(isPresented: $showMultiPicker) { multiPickerSheet }
         }
     }
 
     // MARK: Mode toggle
 
     private var modeToggle: some View {
-        HStack(spacing: 8) {
-            modeButton("Calendar", icon: "calendar", mode: .date)
-            modeButton("Select Entry", icon: "doc.text", mode: .entry)
+        HStack(spacing: 6) {
+            modeButton(L10n.calendar(loc.language), icon: "calendar", mode: .date)
+            modeButton(L10n.selectEntry(loc.language), icon: "doc.text", mode: .entry)
+            modeButton(L10n.multiple(loc.language), icon: "checklist", mode: .multiple)
         }
     }
 
@@ -400,9 +435,12 @@ struct ExportView: View {
         return Button {
             withAnimation(.spring(response: 0.3)) { exportMode = mode }
         } label: {
-            HStack(spacing: 6) {
+            HStack(spacing: 5) {
                 Image(systemName: icon).font(.caption.weight(.bold))
-                Text(label).font(.subheadline.weight(.semibold))
+                Text(label)
+                    .font(.caption.weight(.semibold))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.75)
             }
             .foregroundStyle(on ? .white : Color(hex: "#C4A0E8").opacity(0.75))
             .frame(maxWidth: .infinity)
@@ -420,9 +458,10 @@ struct ExportView: View {
 
     private var calendarCard: some View {
         VStack(alignment: .leading, spacing: 8) {
-            sectionLabel("Pick a Date")
+            sectionLabel(L10n.pickADate(loc.language))
             DatePicker("", selection: $pickedDate, in: ...Date(), displayedComponents: .date)
                 .datePickerStyle(.graphical)
+                .environment(\.locale, loc.language.locale)
                 .tint(Color(hex: "#8B6CAF"))
                 .padding(14)
                 .background(Color(hex: "#1E1040"), in: RoundedRectangle(cornerRadius: 18))
@@ -437,7 +476,7 @@ struct ExportView: View {
 
     private var entryPickerCard: some View {
         VStack(alignment: .leading, spacing: 8) {
-            sectionLabel("Select Entry")
+            sectionLabel(L10n.selectEntryLabel(loc.language))
             Button { showEntryPicker = true } label: {
                 HStack(spacing: 12) {
                     if let e = pickedEntry {
@@ -459,10 +498,41 @@ struct ExportView: View {
                         Image(systemName: "doc.text")
                             .font(.callout)
                             .foregroundStyle(Color(hex: "#C4A0E8").opacity(0.6))
-                        Text("Choose an entry…")
+                        Text(L10n.chooseAnEntry(loc.language))
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
                     }
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(Color(hex: "#C4A0E8").opacity(0.5))
+                }
+                .padding(18)
+                .background(Color(hex: "#1E1040"), in: RoundedRectangle(cornerRadius: 16))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 16)
+                        .stroke(Color(hex: "#2B1B50"), lineWidth: 1)
+                )
+            }
+            .buttonStyle(.plain)
+        }
+    }
+
+    // MARK: Multiple picker card
+
+    private var multiplePickerCard: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            sectionLabel(L10n.chooseEntriesTitle(loc.language))
+            Button { showMultiPicker = true } label: {
+                HStack(spacing: 12) {
+                    Image(systemName: "checklist")
+                        .font(.callout)
+                        .foregroundStyle(Color(hex: "#C4A0E8").opacity(0.7))
+                    Text(selectedIDs.isEmpty
+                         ? L10n.chooseEntriesTitle(loc.language)
+                         : L10n.entriesCountSelected(loc.language, selectedIDs.count))
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(selectedIDs.isEmpty ? .secondary : .primary)
                     Spacer()
                     Image(systemName: "chevron.right")
                         .font(.caption.weight(.semibold))
@@ -514,7 +584,7 @@ struct ExportView: View {
                 } else {
                     Image(systemName: "paperplane.fill")
                 }
-                Text(isGenerating ? "Generating…" : "Send")
+                Text(isGenerating ? L10n.generating(loc.language) : L10n.send(loc.language))
                     .font(.subheadline.weight(.semibold))
             }
             .foregroundStyle(.white)
@@ -545,41 +615,7 @@ struct ExportView: View {
                                 pickedEntry = entry
                                 showEntryPicker = false
                             } label: {
-                                HStack(spacing: 12) {
-                                    Circle()
-                                        .fill(levelColor(for: entry.emotionalLevel))
-                                        .frame(width: 9, height: 9)
-                                    VStack(alignment: .leading, spacing: 4) {
-                                        Text(DateFormatter.localizedString(
-                                            from: entry.createdAt,
-                                            dateStyle: .medium,
-                                            timeStyle: .short
-                                        ))
-                                        .font(.subheadline.weight(.medium))
-                                        .foregroundStyle(.primary)
-
-                                        HStack(spacing: 6) {
-                                            Text("\(entry.emotionalLevel)/10")
-                                                .font(.caption.weight(.semibold))
-                                                .foregroundStyle(levelColor(for: entry.emotionalLevel))
-                                            if !entry.journalText.isEmpty {
-                                                Text("·").foregroundStyle(.tertiary)
-                                                Text(entry.journalText)
-                                                    .font(.caption)
-                                                    .foregroundStyle(.secondary)
-                                                    .lineLimit(1)
-                                            }
-                                        }
-                                    }
-                                    Spacer()
-                                    if pickedEntry?.id == entry.id {
-                                        Image(systemName: "checkmark.circle.fill")
-                                            .foregroundStyle(Color(hex: "#C4A0E8"))
-                                    }
-                                }
-                                .padding(.horizontal, 16)
-                                .padding(.vertical, 13)
-                                .background(Color(hex: "#1E1040"))
+                                entryRow(entry, isSelected: pickedEntry?.id == entry.id)
                             }
                             .buttonStyle(.plain)
                         }
@@ -592,15 +628,103 @@ struct ExportView: View {
                     .padding(20)
                 }
             }
-            .navigationTitle("Choose Entry")
+            .navigationTitle(L10n.chooseEntryTitle(loc.language))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { showEntryPicker = false }
+                    Button(L10n.cancel(loc.language)) { showEntryPicker = false }
                         .foregroundStyle(.secondary)
                 }
             }
         }
+    }
+
+    // MARK: Multi picker sheet
+
+    private var multiPickerSheet: some View {
+        NavigationStack {
+            ZStack {
+                Color(hex: "#160D27").ignoresSafeArea()
+
+                ScrollView(showsIndicators: false) {
+                    LazyVStack(spacing: 1) {
+                        ForEach(entries) { entry in
+                            Button {
+                                if selectedIDs.contains(entry.id) {
+                                    selectedIDs.remove(entry.id)
+                                } else {
+                                    selectedIDs.insert(entry.id)
+                                }
+                                UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                            } label: {
+                                entryRow(entry, isSelected: selectedIDs.contains(entry.id))
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                    .clipShape(RoundedRectangle(cornerRadius: 16))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 16)
+                            .stroke(Color(hex: "#2B1B50"), lineWidth: 1)
+                    )
+                    .padding(20)
+                }
+            }
+            .navigationTitle(L10n.chooseEntriesTitle(loc.language))
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button(L10n.cancel(loc.language)) { showMultiPicker = false }
+                        .foregroundStyle(.secondary)
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button(L10n.done(loc.language)) { showMultiPicker = false }
+                        .fontWeight(.semibold)
+                        .foregroundStyle(Color(hex: "#C4A0E8"))
+                }
+            }
+        }
+    }
+
+    private func entryRow(_ entry: DiaryEntry, isSelected: Bool) -> some View {
+        HStack(spacing: 12) {
+            Circle()
+                .fill(levelColor(for: entry.emotionalLevel))
+                .frame(width: 9, height: 9)
+            VStack(alignment: .leading, spacing: 4) {
+                Text(DateFormatter.localizedString(
+                    from: entry.createdAt,
+                    dateStyle: .medium,
+                    timeStyle: .short
+                ))
+                .font(.subheadline.weight(.medium))
+                .foregroundStyle(.primary)
+
+                HStack(spacing: 6) {
+                    Text("\(entry.emotionalLevel)/10")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(levelColor(for: entry.emotionalLevel))
+                    if !entry.journalText.isEmpty {
+                        Text("·").foregroundStyle(.tertiary)
+                        Text(entry.journalText)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                    }
+                }
+            }
+            Spacer()
+            if isSelected {
+                Image(systemName: "checkmark.circle.fill")
+                    .foregroundStyle(Color(hex: "#C4A0E8"))
+            } else {
+                Image(systemName: "circle")
+                    .foregroundStyle(Color(hex: "#C4A0E8").opacity(0.3))
+            }
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 13)
+        .background(Color(hex: "#1E1040"))
     }
 
     // MARK: Helpers
@@ -625,8 +749,9 @@ struct ExportView: View {
         guard !entriesToExport.isEmpty, !isGenerating else { return }
         isGenerating = true
         let toExport = entriesToExport
+        let lang = loc.language
         Task { @MainActor in
-            let data = ExportService.generatePDF(entries: toExport)
+            let data = ExportService.generatePDF(entries: toExport, language: lang)
             if let url = ExportService.writeToTemp(data) {
                 shareItem = IdentifiableURL(url: url)
             }
@@ -647,5 +772,5 @@ struct ShareSheet: UIViewControllerRepresentable {
     func makeUIViewController(context: Context) -> UIActivityViewController {
         UIActivityViewController(activityItems: [url], applicationActivities: nil)
     }
-    func updateUIViewController(_ uvc: UIActivityViewController, context: Context) {}
+    func updateUIViewController(_ vc: UIActivityViewController, context: Context) {}
 }

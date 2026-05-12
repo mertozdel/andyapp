@@ -4,6 +4,7 @@ import SwiftData
 struct EntryDetailView: View {
     @Bindable var entry: DiaryEntry
     @Environment(\.modelContext) private var modelContext
+    @EnvironmentObject private var loc: LocalizationManager
 
     private var intensityColor: Color {
         switch entry.emotionalLevel {
@@ -50,7 +51,7 @@ struct EntryDetailView: View {
 
                 if !entry.emotions.isEmpty {
                     VStack(alignment: .leading, spacing: 6) {
-                        Text("Feelings")
+                        Text(L10n.feelings(loc.language))
                             .font(.caption.weight(.semibold))
                             .foregroundStyle(.secondary)
                             .textCase(.uppercase)
@@ -108,7 +109,7 @@ struct EntryDetailView: View {
 
     private var bodyMapSection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            sectionLabel("Body sensations")
+            sectionLabel(L10n.bodySensationsLabel(loc.language))
             HStack {
                 Spacer()
                 BodyMapView(sensations: .constant(entry.bodySensations), isReadOnly: true)
@@ -124,7 +125,7 @@ struct EntryDetailView: View {
 
     private var journalSection: some View {
         VStack(alignment: .leading, spacing: 10) {
-            sectionLabel("Journal")
+            sectionLabel(L10n.journalLabel(loc.language))
             Text(entry.journalText)
                 .font(.body)
                 .lineSpacing(5)
@@ -139,12 +140,12 @@ struct EntryDetailView: View {
 
     private var promptAnswersSection: some View {
         let labelMap: [String: String] = [
-            "trigger":   "What triggered it",
-            "need":      "What I needed",
-            "gratitude": "One thing I noticed",
+            "trigger":   L10n.detailTriggerLabel(loc.language),
+            "need":      L10n.detailNeedLabel(loc.language),
+            "gratitude": L10n.detailGratitudeLabel(loc.language),
         ]
         return VStack(alignment: .leading, spacing: 12) {
-            sectionLabel("Reflections")
+            sectionLabel(L10n.reflectionsLabel(loc.language))
             ForEach(Array(entry.promptAnswers).sorted(by: { $0.key < $1.key }), id: \.key) { key, value in
                 VStack(alignment: .leading, spacing: 3) {
                     Text(labelMap[key] ?? key.capitalized)

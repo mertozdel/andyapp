@@ -28,6 +28,8 @@ struct BodyMapView: View {
     var isReadOnly: Bool = false
     var isCompact: Bool = false
 
+    @EnvironmentObject private var loc: LocalizationManager
+
     private var canvasSize: CGSize {
         isCompact
             ? CGSize(width: 66, height: 121)
@@ -50,7 +52,7 @@ struct BodyMapView: View {
                 )
                 .animation(.spring(response: 0.5, dampingFraction: 0.8), value: isFlipping)
             if !isCompact && !isReadOnly {
-                Text("Tap where you feel it")
+                Text(L10n.tapWhereYouFeel(loc.language))
                     .font(.footnote)
                     .foregroundStyle(.secondary)
                     .padding(.top, 2)
@@ -76,7 +78,7 @@ struct BodyMapView: View {
                     withAnimation { isFlipping.toggle() }
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) { activeSide = side }
                 } label: {
-                    Text(side.displayName)
+                    Text(side.localizedName(loc.language))
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(activeSide == side ? .white : Color(hex: "#6D5F80"))
                         .frame(maxWidth: .infinity)
@@ -424,17 +426,20 @@ struct SensationPickerSheet: View {
     let onSelect: (SensationType, Int, String?) -> Void
     let onCancel: () -> Void
     @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject private var loc: LocalizationManager
     @State private var selectedType: SensationType? = nil
     @State private var intensity: Int = 3
     @State private var note: String = ""
 
-    private let groups: [(String, [SensationType])] = [
-        ("Tension",     [.tightness, .pressure, .constriction, .heaviness, .knot]),
-        ("Activation",  [.tingling, .vibration, .fluttering, .racing, .pulsing]),
-        ("Temperature", [.warmth, .heat, .coldness, .chills]),
-        ("Ease",        [.lightness, .openness, .softness, .expansion]),
-        ("Discomfort",  [.pain, .ache, .nausea, .dizziness, .numbness]),
-    ]
+    private var groups: [(String, [SensationType])] {
+        [
+            (L10n.groupTension(loc.language),     [.tightness, .pressure, .constriction, .heaviness, .knot]),
+            (L10n.groupActivation(loc.language),  [.tingling, .vibration, .fluttering, .racing, .pulsing]),
+            (L10n.groupTemperature(loc.language), [.warmth, .heat, .coldness, .chills]),
+            (L10n.groupEase(loc.language),        [.lightness, .openness, .softness, .expansion]),
+            (L10n.groupDiscomfort(loc.language),  [.pain, .ache, .nausea, .dizziness, .numbness]),
+        ]
+    }
 
     var body: some View {
         NavigationStack {
@@ -458,7 +463,7 @@ struct SensationPickerSheet: View {
 
                     if selectedType != nil {
                         VStack(alignment: .leading, spacing: 10) {
-                            Text("Intensity")
+                            Text(L10n.intensityLabel(loc.language))
                                 .font(.caption.weight(.semibold))
                                 .foregroundStyle(.secondary)
                                 .textCase(.uppercase)
@@ -487,11 +492,11 @@ struct SensationPickerSheet: View {
                         .transition(.move(edge: .bottom).combined(with: .opacity))
 
                         VStack(alignment: .leading, spacing: 6) {
-                            Text("Note (optional)")
+                            Text(L10n.noteOptional(loc.language))
                                 .font(.caption.weight(.semibold))
                                 .foregroundStyle(.secondary)
                                 .textCase(.uppercase)
-                            TextField("What does it feel like?", text: $note, axis: .vertical)
+                            TextField(L10n.whatDoesItFeelLike(loc.language), text: $note, axis: .vertical)
                                 .lineLimit(2...4)
                                 .textFieldStyle(.plain)
                                 .padding(12)
@@ -504,14 +509,14 @@ struct SensationPickerSheet: View {
                 .padding(.top, 8)
                 .padding(.bottom, 40)
             }
-            .navigationTitle("What do you feel?")
+            .navigationTitle(L10n.whatDoYouFeel(loc.language))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { onCancel(); dismiss() }
+                    Button(L10n.cancel(loc.language)) { onCancel(); dismiss() }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Add") {
+                    Button(L10n.add(loc.language)) {
                         guard let t = selectedType else { return }
                         onSelect(t, intensity, note.isEmpty ? nil : note)
                         dismiss()
@@ -532,7 +537,7 @@ struct SensationPickerSheet: View {
         } label: {
             HStack(spacing: 4) {
                 Text(type.emoji).font(.system(size: 14))
-                Text(type.displayName).font(.caption.weight(.medium))
+                Text(type.localizedName(loc.language)).font(.caption.weight(.medium))
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, 10)
@@ -619,7 +624,7 @@ struct MiniBodyMapView: View {
             }
         }
     }
-    return W()
+    return W().environmentObject(LocalizationManager())
 }
 
 #Preview("Mini") {
@@ -629,4 +634,5 @@ struct MiniBodyMapView: View {
     ])
     .padding()
     .background(Color(hex: "#FAF7FD"))
+    .environmentObject(LocalizationManager())
 }
