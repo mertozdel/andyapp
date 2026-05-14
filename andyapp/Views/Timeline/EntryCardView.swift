@@ -4,8 +4,6 @@ struct EntryCardView: View {
     let entry: DiaryEntry
     var isSelectionMode: Bool = false
     var isSelected: Bool = false
-    var onMenuExport: (() -> Void)? = nil
-    var onMenuSelect: (() -> Void)? = nil
 
     @EnvironmentObject private var loc: LocalizationManager
 
@@ -46,9 +44,6 @@ struct EntryCardView: View {
                         .padding(.horizontal, 8)
                         .padding(.vertical, 3)
                         .background(intensityColor.opacity(0.12), in: Capsule())
-                    if !isSelectionMode && (onMenuExport != nil || onMenuSelect != nil) {
-                        cardMenu
-                    }
                 }
 
                 // Emotion pills (up to 4)
@@ -114,31 +109,4 @@ struct EntryCardView: View {
         .padding(.top, 2)
     }
 
-    private var cardMenu: some View {
-        Menu {
-            if let onMenuExport {
-                Button {
-                    onMenuExport()
-                } label: {
-                    Label(L10n.exportThisEntry(loc.language), systemImage: "square.and.arrow.up")
-                }
-            }
-            if let onMenuSelect {
-                Button {
-                    onMenuSelect()
-                } label: {
-                    Label(L10n.selectMultiple(loc.language), systemImage: "checklist")
-                }
-            }
-        } label: {
-            Image(systemName: "ellipsis")
-                .font(.caption.weight(.bold))
-                .foregroundStyle(Color(hex: "#C4A0E8").opacity(0.75))
-                .frame(width: 28, height: 24)
-                .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .menuStyle(.borderlessButton)
-        .menuIndicator(.hidden)
-    }
 }

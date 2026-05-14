@@ -148,15 +148,7 @@ struct DiaryTimelineView: View {
             .buttonStyle(.plain)
         } else {
             NavigationLink(value: entry) {
-                EntryCardView(
-                    entry: entry,
-                    onMenuExport: {
-                        openExport(mode: .multiple, preselected: [entry.id])
-                    },
-                    onMenuSelect: {
-                        enterSelectionMode(initial: [entry.id])
-                    }
-                )
+                EntryCardView(entry: entry)
             }
             .buttonStyle(.plain)
         }

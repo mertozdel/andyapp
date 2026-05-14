@@ -6,6 +6,8 @@ struct EntryDetailView: View {
     @Environment(\.modelContext) private var modelContext
     @EnvironmentObject private var loc: LocalizationManager
 
+    @State private var showExport = false
+
     private var intensityColor: Color {
         switch entry.emotionalLevel {
         case 1...3: return Color(hex: "#55EFC4")
@@ -21,6 +23,8 @@ struct EntryDetailView: View {
                 headerSection
                 if !entry.bodySensations.isEmpty { bodyMapSection }
                 if !entry.journalText.isEmpty    { journalSection }
+                if entry.hasSleepData            { sleepSection }
+                if entry.hasLibidoData           { libidoSection }
                 if !entry.promptAnswers.isEmpty  { promptAnswersSection }
             }
             .padding(20)
@@ -28,6 +32,17 @@ struct EntryDetailView: View {
         .background(Color(hex: "#160D27").ignoresSafeArea())
         .navigationTitle(entry.displayTitle)
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button { showExport = true } label: {
+                    Image(systemName: "square.and.arrow.up")
+                        .foregroundStyle(Color(hex: "#C4A0E8"))
+                }
+            }
+        }
+        .sheet(isPresented: $showExport) {
+            ExportView(entries: [entry], initialMode: .multiple, preselected: [entry.id])
+        }
     }
 
     // MARK: Header
@@ -162,7 +177,74 @@ struct EntryDetailView: View {
         .shadow(color: .black.opacity(0.35), radius: 6, y: 2)
     }
 
+    // MARK: Sleep
+
+    private var sleepSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            sectionLabel(L10n.pdfSleep(loc.language))
+            if let formatted = entry.sleepDurationFormatted {
+                detailRow(label: L10n.duration(loc.language), value: formatted)
+            }
+            if let q = entry.sleepQuality {
+                detailRow(label: L10n.sleepQuality(loc.language), value: "\(q) / 10")
+            }
+            if let w = entry.sleepWakeups {
+                detailRow(label: L10n.timesWokenUp(loc.language), value: "\(w)")
+            }
+            if entry.sleepHadDreams == true {
+                Text(L10n.pdfHadDreams(loc.language))
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+            }
+            if let n = entry.sleepNotes, !n.isEmpty {
+                Text(n)
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+                    .lineSpacing(4)
+            }
+        }
+        .padding(18)
+        .background(Color(hex: "#231441"), in: RoundedRectangle(cornerRadius: 20))
+        .shadow(color: .black.opacity(0.35), radius: 6, y: 2)
+    }
+
+    // MARK: Libido
+
+    private var libidoSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            sectionLabel(L10n.pdfDesire(loc.language))
+            if let lvl = entry.libidoLevel {
+                detailRow(label: L10n.desireLevel(loc.language), value: "\(lvl) / 10")
+            }
+            if let tags = entry.libidoContextTags, !tags.isEmpty {
+                Text(tags.joined(separator: ", "))
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+            }
+            if let n = entry.libidoNotes, !n.isEmpty {
+                Text(n)
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+                    .lineSpacing(4)
+            }
+        }
+        .padding(18)
+        .background(Color(hex: "#231441"), in: RoundedRectangle(cornerRadius: 20))
+        .shadow(color: .black.opacity(0.35), radius: 6, y: 2)
+    }
+
     // MARK: Helpers
+
+    private func detailRow(label: String, value: String) -> some View {
+        HStack {
+            Text(label)
+                .font(.callout)
+                .foregroundStyle(.secondary)
+            Spacer()
+            Text(value)
+                .font(.callout.weight(.semibold))
+        }
+    }
 
     private func sectionLabel(_ text: String) -> some View {
         Text(text)
