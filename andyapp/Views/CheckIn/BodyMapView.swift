@@ -63,7 +63,7 @@ struct BodyMapView: View {
                 onSelect: { t, i, n in commitSensation(type: t, intensity: i, note: n) },
                 onCancel: { pendingTapLocation = nil; pendingNormalized = nil }
             )
-            .presentationDetents([.medium])
+            .presentationDetents([.medium, .large])
             .presentationDragIndicator(.visible)
             .presentationCornerRadius(MapTokens.sheetCornerRadius)
         }
@@ -91,7 +91,7 @@ struct BodyMapView: View {
             }
         }
         .background(Capsule().fill(Color(hex: "#2B1B50")))
-        .frame(width: 200)
+        .frame(maxWidth: 240)
     }
 
     // MARK: Canvas
@@ -509,6 +509,7 @@ struct SensationPickerSheet: View {
                 .padding(.top, 8)
                 .padding(.bottom, 40)
             }
+            .scrollDismissesKeyboard(.interactively)
             .navigationTitle(L10n.whatDoYouFeel(loc.language))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

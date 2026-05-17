@@ -6,6 +6,7 @@ import SwiftData
 struct CheckInView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.horizontalSizeClass) private var sizeClass
     @EnvironmentObject private var loc: LocalizationManager
 
     @State private var currentStep = 0
@@ -76,6 +77,8 @@ struct CheckInView: View {
                             .padding(.bottom, 28)
                             .padding(.top, 16)
                     }
+                    .frame(maxWidth: sizeClass == .regular ? 640 : .infinity)
+                    .frame(maxWidth: .infinity)
                 }
             }
             .navigationTitle(isSaved ? "" : stepTitles[currentStep])
@@ -496,6 +499,7 @@ private struct SleepStepView: View {
             }
             .padding(.bottom, 8)
         }
+        .scrollDismissesKeyboard(.interactively)
     }
 
     private var bedWakeRow: some View {
@@ -706,6 +710,7 @@ private struct LibidoStepView: View {
             }
             .padding(.bottom, 8)
         }
+        .scrollDismissesKeyboard(.interactively)
     }
 
     private var levelSection: some View {
@@ -845,7 +850,7 @@ private struct JournalStepView: View {
                     }
                     TextEditor(text: $journalText)
                         .font(.body)
-                        .frame(minHeight: 140)
+                        .frame(minHeight: 140, maxHeight: 280)
                         .focused($editorFocused)
                         .scrollContentBackground(.hidden)
                 }
@@ -882,5 +887,6 @@ private struct JournalStepView: View {
             }
             .padding(.bottom, 8)
         }
+        .scrollDismissesKeyboard(.interactively)
     }
 }
