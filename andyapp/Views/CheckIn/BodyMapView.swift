@@ -68,7 +68,7 @@ struct BodyMapView: View {
                 onSelect: { t, i, n in commitSensation(type: t, intensity: i, note: n) },
                 onCancel: { pendingTapLocation = nil; pendingNormalized = nil }
             )
-            .presentationDetents([.medium, .large])
+            .presentationDetents([.large])
             .presentationDragIndicator(.visible)
             .presentationCornerRadius(MapTokens.sheetCornerRadius)
         }
