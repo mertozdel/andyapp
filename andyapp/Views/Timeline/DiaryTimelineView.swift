@@ -40,7 +40,7 @@ struct DiaryTimelineView: View {
             .navigationTitle(L10n.timelineTitle(loc.language))
             .toolbar { toolbarContent }
         }
-        .sheet(isPresented: $showCheckIn)  { CheckInView() }
+        .fullScreenCover(isPresented: $showCheckIn) { CheckInView() }
         .sheet(isPresented: $showSettings) { SettingsView() }
         .sheet(isPresented: $showExport) {
             ExportView(entries: entries,
