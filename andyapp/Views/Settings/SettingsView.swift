@@ -35,7 +35,7 @@ struct SettingsView: View {
                     HStack {
                         Text(L10n.versionLabel(loc.language))
                         Spacer()
-                        Text("1.0.0").foregroundStyle(.secondary)
+                        Text("1.1").foregroundStyle(.secondary)
                     }
                     HStack {
                         Text(L10n.builtWithLabel(loc.language))
