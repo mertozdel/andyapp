@@ -4,6 +4,7 @@ import SwiftData
 struct DiaryTimelineView: View {
     @Query(sort: \DiaryEntry.createdAt, order: .reverse) private var entries: [DiaryEntry]
     @EnvironmentObject private var loc: LocalizationManager
+    @Environment(\.horizontalSizeClass) private var hSizeClass
 
     @State private var showCheckIn = false
     @State private var showSettings = false
@@ -127,6 +128,7 @@ struct DiaryTimelineView: View {
                 }
             }
             .padding(.top, 8)
+            .iPadCentered(maxWidth: 680)
         }
         .navigationDestination(for: DiaryEntry.self) { entry in
             EntryDetailView(entry: entry)
@@ -159,15 +161,19 @@ struct DiaryTimelineView: View {
     private var emptyState: some View {
         VStack(spacing: 16) {
             Image(systemName: "heart.text.square")
-                .font(.system(size: 60))
+                .font(.system(size: hSizeClass == .regular ? 80 : 60))
                 .foregroundStyle(Color(hex: "#7B5AB0"))
             Text(L10n.emptyTitle(loc.language))
                 .font(.title3.weight(.semibold))
                 .foregroundStyle(Color(hex: "#C4A0E8"))
+                .multilineTextAlignment(.center)
             Text(L10n.emptySubtitle(loc.language))
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
         }
+        .padding(.horizontal, 24)
+        .iPadCentered(maxWidth: 520)
     }
 
     // MARK: Selection helpers

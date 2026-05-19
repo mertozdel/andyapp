@@ -28,6 +28,7 @@ struct EntryDetailView: View {
                 if !entry.promptAnswers.isEmpty  { promptAnswersSection }
             }
             .padding(20)
+            .iPadCentered(maxWidth: 680)
         }
         .background(Color(hex: "#160D27").ignoresSafeArea())
         .navigationTitle(entry.displayTitle)

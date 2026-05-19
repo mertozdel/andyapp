@@ -77,8 +77,7 @@ struct CheckInView: View {
                             .padding(.bottom, 28)
                             .padding(.top, 16)
                     }
-                    .frame(maxWidth: sizeClass == .regular ? 640 : .infinity)
-                    .frame(maxWidth: .infinity)
+                    .iPadCentered(maxWidth: 640)
                 }
             }
             .navigationTitle(isSaved ? "" : stepTitles[currentStep])
@@ -107,11 +106,14 @@ struct CheckInView: View {
     // MARK: Progress dots
 
     private var progressDots: some View {
-        HStack(spacing: 8) {
+        let isPad = sizeClass == .regular
+        let dotSize: CGFloat = isPad ? 10 : 8
+        let activeWidth: CGFloat = isPad ? 32 : 28
+        return HStack(spacing: isPad ? 10 : 8) {
             ForEach(0..<totalSteps, id: \.self) { i in
                 Capsule()
                     .fill(i <= currentStep ? Color(hex: "#8B6CAF") : Color.white.opacity(0.20))
-                    .frame(width: i == currentStep ? 28 : 8, height: 8)
+                    .frame(width: i == currentStep ? activeWidth : dotSize, height: dotSize)
                     .animation(.spring(response: 0.3), value: currentStep)
             }
         }

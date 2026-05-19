@@ -403,6 +403,7 @@ struct ExportView: View {
                         sendButton
                     }
                     .padding(20)
+                    .iPadCentered(maxWidth: 680)
                     .animation(.spring(response: 0.38, dampingFraction: 0.88), value: exportMode)
                 }
             }

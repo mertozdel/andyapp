@@ -29,11 +29,16 @@ struct BodyMapView: View {
     var isCompact: Bool = false
 
     @EnvironmentObject private var loc: LocalizationManager
+    @Environment(\.horizontalSizeClass) private var hSizeClass
 
     private var canvasSize: CGSize {
-        isCompact
-            ? CGSize(width: 66, height: 121)
-            : CGSize(width: MapTokens.canvasWidth, height: MapTokens.canvasHeight)
+        if isCompact {
+            return CGSize(width: 66, height: 121)
+        }
+        if hSizeClass == .regular {
+            return CGSize(width: 300, height: 552)
+        }
+        return CGSize(width: MapTokens.canvasWidth, height: MapTokens.canvasHeight)
     }
 
     var body: some View {
@@ -131,7 +136,14 @@ struct BodyMapView: View {
     }
 
     @ViewBuilder private var silhouetteView: some View {
-        let sw: CGFloat = isCompact ? 0.5 : MapTokens.silhouetteStrokeWidth
+        let sw: CGFloat = {
+            if isCompact { return 0.5 }
+            return hSizeClass == .regular ? 1.7 : MapTokens.silhouetteStrokeWidth
+        }()
+        let spineSW: CGFloat = {
+            if isCompact { return 0.3 }
+            return hSizeClass == .regular ? 0.9 : 0.7
+        }()
         ZStack {
             FrontBodyShape()
                 .fill(MapTokens.silhouetteFill)
@@ -140,7 +152,7 @@ struct BodyMapView: View {
                 SpineDetailShape()
                     .stroke(
                         MapTokens.silhouetteStroke.opacity(0.30),
-                        style: StrokeStyle(lineWidth: isCompact ? 0.3 : 0.7, dash: [4, 4])
+                        style: StrokeStyle(lineWidth: spineSW, dash: [4, 4])
                     )
             }
         }
